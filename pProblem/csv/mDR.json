@@ -1,0 +1,58 @@
+{
+  "resourceType": "DocumentReference",
+  "id": "master-problem-detail-index",
+  "status": "current",
+  "docStatus": "final",
+  "type": {
+    "coding": [
+      {
+        "system": "http://loinc.org",
+        "code": "11503-0",
+        "display": "Medical records"
+      }
+    ],
+    "text": "Master Index for Problem Detail CSV Configurations"
+  },
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/document-classcodes",
+          "code": "Admin",
+          "display": "Administrative"
+        }
+      ]
+    }
+  ],
+  "subject": {
+    "display": "System Level Configuration Index"
+  },
+  "date": "2026-10-13T23:55:00Z",
+  "description": "總體目錄：僅提供問題 Code 與對應 Detail DocumentReference 之調閱位址與說明",
+  "content": [
+    {
+      "attachment": {
+        "contentType": "text/csv",
+        "title": "fever_detail.csv (發燒細部描述檔)",
+        "url": "https://example.org/FHIR/R4/DocumentReference/doc-problem-detail-fever"
+      },
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "fever",
+        "display": "發燒 (Fever)"
+      }
+    },
+    {
+      "attachment": {
+        "contentType": "text/csv",
+        "title": "pain_detail.csv (疼痛細部描述檔)",
+        "url": "https://example.org/FHIR/R4/DocumentReference/doc-problem-detail-pain"
+      },
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "pain",
+        "display": "疼痛 (Pain)"
+      }
+    }
+  ]
+}

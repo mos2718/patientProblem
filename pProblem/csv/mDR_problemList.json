@@ -1,0 +1,978 @@
+{
+  "resourceType": "DocumentReference",
+  "id": "master-problem-detail-index",
+  "status": "current",
+  "docStatus": "final",
+  "type": {
+    "coding": [
+      {
+        "system": "http://loinc.org",
+        "code": "11503-0",
+        "display": "Medical records"
+      }
+    ],
+    "text": "Master Index for Problem Detail CSV Configurations"
+  },
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/document-classcodes",
+          "code": "Admin",
+          "display": "Administrative"
+        }
+      ]
+    }
+  ],
+  "subject": {
+    "display": "System Level Configuration Index"
+  },
+  "date": "2026-10-13T23:55:00Z",
+  "description": "總體目錄：僅提供問題 Code 與對應 Detail DocumentReference 之調閱位址與說明",
+  "content": [
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "fever",
+        "display": "發燒 (Fever)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "chills",
+        "display": "畏寒 (Chills)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "rigors",
+        "display": "寒顫 (Rigors)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "fatigue",
+        "display": "倦怠 (Fatigue)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "exhaustion",
+        "display": "疲憊 (Exhaustion)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "weakness",
+        "display": "虛弱 (Weakness)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "lack-of-strength",
+        "display": "無力 (Lack of strength)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "sweating",
+        "display": "出汗 (Sweating)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "thirst",
+        "display": "口渴 (Thirst)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "weight-change",
+        "display": "體重變化 (Weight change)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "pain",
+        "display": "疼痛 (Pain)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "discomfort",
+        "display": "不適 (Discomfort)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "pressure-sensation",
+        "display": "壓迫感 (Pressure sensation)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "burning-sensation",
+        "display": "灼熱感 (Burning sensation)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "aching",
+        "display": "酸痛 (Aching)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "distending-pain",
+        "display": "脹痛 (Distending pain)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "stinging-pain",
+        "display": "刺痛 (Stinging pain)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "tightness",
+        "display": "緊繃感 (Tightness)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "dyspnea",
+        "display": "呼吸困難 (Dyspnea)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "shortness-of-breath",
+        "display": "呼吸短促 (Shortness of breath)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "chest-discomfort",
+        "display": "胸部不適 (Chest-discomfort)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "tachypnea",
+        "display": "呼吸急促 (Tachypnea)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "chest-tightness",
+        "display": "胸悶 (Chest tightness)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "cough",
+        "display": "咳嗽 (Cough)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "sputum",
+        "display": "痰 (Sputum)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "productive-cough",
+        "display": "有痰咳嗽 (Productive cough)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "breathing-discomfort",
+        "display": "呼吸不適 (Breathing discomfort)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "palpitations",
+        "display": "心悸 (Palpitations)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "abnormal-heartbeat-sensation",
+        "display": "異常心跳感 (Abnormal heartbeat sensation)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "chest-discomfort",
+        "display": "胸部不適 (Chest discomfort)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "dizziness",
+        "display": "頭暈 (Dizziness)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "syncope",
+        "display": "昏厥 (Syncope)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "edema",
+        "display": "水腫 (Edema)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "nausea",
+        "display": "噁心 (Nausea)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "vomiting",
+        "display": "嘔吐 (Vomiting)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "abdominal-distension",
+        "display": "腹脹 (Abdominal distension)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "diarrhea",
+        "display": "腹瀉 (Diarrhea)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "constipation",
+        "display": "便秘 (Constipation)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "loss-of-appetite",
+        "display": "食慾不振 (Loss of appetite)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "swallowing-discomfort",
+        "display": "吞嚥不適 (Swallowing discomfort)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "stomach-discomfort",
+        "display": "胃部不適 (Stomach discomfort)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "frequency",
+        "display": "頻尿 (Urinary frequency)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "urgency",
+        "display": "尿急 (Urinary urgency)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "dysuria",
+        "display": "排尿疼痛 (Dysuria)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "difficulty-urinating",
+        "display": "排尿困難 (Difficulty urinating)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "urinary-incontinence",
+        "display": "尿失禁 (Urinary incontinence)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "hematuria",
+        "display": "血尿 (Hematuria)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "change-in-urine-output",
+        "display": "尿量變化 (Change in urine output)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "headache",
+        "display": "頭痛 (Headache)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "numbness",
+        "display": "麻木 (Numbness)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "tingling",
+        "display": "刺麻感 (Tingling)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "sensory-disturbance",
+        "display": "感覺異常 (Sensory disturbance)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "vertigo",
+        "display": "眩暈 (Vertigo)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "altered-consciousness",
+        "display": "意識改變 (Altered consciousness)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "seizure",
+        "display": "抽搐／癲癇發作 (Seizure)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "memory-change",
+        "display": "記憶變化 (Memory change)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "difficulty-with-activity",
+        "display": "活動困難 (Difficulty with activity)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "difficulty-walking",
+        "display": "行走困難 (Difficulty walking)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "movement-difficulty",
+        "display": "動作困難 (Movement difficulty)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "balance-disturbance",
+        "display": "平衡異常 (Balance disturbance)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "perceived-muscle-weakness",
+        "display": "自覺肌力不足 (Perceived muscle weakness)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "falling-easily",
+        "display": "容易跌倒 (Falling easily)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "itching",
+        "display": "搔癢 (Itching)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "redness-swelling",
+        "display": "紅腫 (Redness and swelling)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "rash",
+        "display": "皮疹 (Rash)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "painful-skin",
+        "display": "皮膚疼痛 (Painful skin)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "dry-skin",
+        "display": "皮膚乾燥 (Dry skin)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "skin-breakdown",
+        "display": "皮膚破損 (Skin breakdown)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "wound",
+        "display": "傷口 (Wound)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "drainage",
+        "display": "滲液 (Drainage)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "bleeding",
+        "display": "出血 (Bleeding)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "difficulty-falling-asleep",
+        "display": "入睡困難 (Difficulty falling asleep)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "interrupted-sleep",
+        "display": "睡眠中斷 (Interrupted sleep)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "early-awakening",
+        "display": "早醒 (Early awakening)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "insufficient-sleep",
+        "display": "睡眠不足 (Insufficient sleep)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "daytime-sleepiness",
+        "display": "白天嗜睡 (Daytime sleepiness)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "poor-sleep-quality",
+        "display": "睡眠品質差 (Poor sleep quality)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "anxiety",
+        "display": "焦慮 (Anxiety)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "tension",
+        "display": "緊張 (Tension)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "fear",
+        "display": "害怕 (Fear)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "depression",
+        "display": "憂鬱情緒 (Depressed mood)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "irritability",
+        "display": "易怒 (Irritability)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "restlessness",
+        "display": "坐立不安 (Restlessness)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "low-mood",
+        "display": "情緒低落 (Low mood)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "mood-change",
+        "display": "情緒變化 (Mood change)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "blurred-vision",
+        "display": "視力模糊 (Blurred vision)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "visual-disturbance",
+        "display": "視覺異常 (Visual disturbance)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "dry-eyes",
+        "display": "眼睛乾澀 (Dry eyes)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "itchy-eyes",
+        "display": "眼睛搔癢 (Itchy eyes)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "photophobia",
+        "display": "畏光 (Photophobia)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "tearing",
+        "display": "流淚 (Tearing)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "foreign-body-sensation-eye",
+        "display": "眼睛異物感 (Foreign body sensation in eye)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "earache",
+        "display": "耳痛 (Earache)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "tinnitus",
+        "display": "耳鳴 (Tinnitus)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "ear-fullness",
+        "display": "耳脹／耳塞感 (Ear fullness)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "hearing-loss",
+        "display": "聽力下降 (Hearing loss)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "foreign-body-sensation-ear",
+        "display": "耳內異物感 (Foreign body sensation in ear)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "vertigo",
+        "display": "眩暈 (Vertigo)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "nasal-congestion",
+        "display": "鼻塞 (Nasal congestion)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "runny-nose",
+        "display": "流鼻水 (Runny nose)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "itchy-nose",
+        "display": "鼻癢 (Itchy nose)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "sneezing",
+        "display": "打噴嚏 (Sneezing)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "epistaxis",
+        "display": "鼻出血 (Epistaxis)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "abnormal-smell",
+        "display": "嗅覺異常 (Abnormal smell)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "dry-mouth",
+        "display": "口乾 (Dry mouth)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "oral-pain",
+        "display": "口腔疼痛 (Oral pain)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "oral-ulcer",
+        "display": "口腔潰瘍 (Oral ulcer)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "bad-breath",
+        "display": "口臭 (Bad breath)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "oral-foreign-body-sensation",
+        "display": "口腔異物感 (Oral foreign body sensation)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "difficulty-opening-mouth",
+        "display": "張口困難 (Difficulty opening mouth)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "toothache",
+        "display": "牙痛 (Toothache)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "tooth-sensitivity",
+        "display": "牙齒敏感 (Tooth sensitivity)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "bite-discomfort",
+        "display": "咬合不適 (Bite discomfort)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "loose-tooth",
+        "display": "牙齒鬆動 (Loose tooth)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "gum-discomfort",
+        "display": "牙齦不適 (Gum discomfort)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "pain-with-chewing",
+        "display": "咀嚼疼痛 (Pain with chewing)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "other-problem",
+        "display": "其他問題 (Other problem)"
+      }
+    },
+    {
+      "attachment": {},
+      "format": {
+        "system": "http://example.org/fhir/CodeSystem/problem-code",
+        "code": "unclassified-problem",
+        "display": "未分類問題 (Unclassified problem)"
+      }
+    }
+  ]
+}

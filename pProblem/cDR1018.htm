@@ -1,0 +1,409 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FHIR DocumentReference CSV 上傳工具</title>
+
+<style>
+  body {
+    font-family: Arial, "Microsoft JhengHei", sans-serif;
+    max-width: 1000px;
+    margin: 24px auto;
+    padding: 0 16px;
+    line-height: 1.6;
+    background: #f7f8fa;
+    color: #222;
+  }
+
+  h2 { color: #245580; }
+
+  .panel {
+    background: white;
+    padding: 18px;
+    margin-bottom: 18px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+
+  label {
+    display: block;
+    margin: 12px 0 6px;
+    font-weight: bold;
+  }
+
+  input[type="file"], input[type="text"], textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    font: inherit;
+    background: white;
+  }
+
+  textarea {
+    min-height: 260px;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    white-space: pre;
+    overflow: auto;
+  }
+
+  button {
+    margin: 12px 8px 8px 0;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 5px;
+    background: #1769aa;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  button:hover { background: #104e80; }
+
+  button:disabled {
+    background: #999;
+    cursor: not-allowed;
+  }
+
+  #status { white-space: pre-wrap; }
+
+  #resourceUrl {
+    display: block;
+    overflow-wrap: anywhere;
+    margin-top: 8px;
+  }
+
+  .hint {
+    color: #555;
+    font-size: 14px;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>FHIR DocumentReference CSV 上傳工具</h2>
+
+<div class="panel">
+  <label for="serverUrl">FHIR Server URL</label>
+  <input
+    id="serverUrl"
+    type="text"
+    value="https://hapi.fhir.org/baseR4"
+  >
+
+  <label for="csvFile">選擇 detail CSV 檔案</label>
+  <input id="csvFile" type="file" accept=".csv,text/csv">
+
+  <p class="hint">
+    CSV 內容會以 UTF-8 位元組編碼成 Base64，
+    儲存在 DocumentReference.content[0].attachment.data。
+  </p>
+
+  <button id="generateBtn" type="button">
+    Button 1：產生 JSON
+  </button>
+</div>
+
+<div class="panel">
+  <label for="jsonOutput">
+    DocumentReference JSON（可檢視及修改）
+  </label>
+
+  <textarea id="jsonOutput"
+    spellcheck="false"
+    placeholder="按 Button 1 後，JSON 將顯示於此"></textarea>
+
+  <button id="uploadBtn" type="button">
+    Button 2：PUT 上傳 FHIR Server
+  </button>
+</div>
+
+<div class="panel">
+  <label for="responseOutput">FHIR Server 回應結果</label>
+
+  <textarea id="responseOutput"
+    readonly
+    spellcheck="false"
+    placeholder="上傳後的伺服器回應將顯示於此"></textarea>
+
+  <label>成功上傳後的 DocumentReference URL</label>
+  <a id="resourceUrl" href="#" target="_blank"
+     rel="noopener noreferrer" hidden></a>
+
+  <p id="status" role="status"></p>
+</div>
+
+<script>
+"use strict";
+
+// FHIR R4 Server
+const DEFAULT_SERVER =
+  "https://hapi.fhir.org/baseR4";
+
+// 取得網頁元素
+const serverInput = document.getElementById("serverUrl");
+const csvInput = document.getElementById("csvFile");
+const jsonOutput = document.getElementById("jsonOutput");
+const responseOutput = document.getElementById("responseOutput");
+const generateBtn = document.getElementById("generateBtn");
+const uploadBtn = document.getElementById("uploadBtn");
+const resourceUrl = document.getElementById("resourceUrl");
+const statusOutput = document.getElementById("status");
+
+// 頁面初始設定
+serverInput.value = DEFAULT_SERVER;
+
+// 產生 UUID；優先使用瀏覽器原生 crypto.randomUUID()
+function createUUID() {
+  if (window.crypto && window.crypto.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  // 舊版瀏覽器的備用方式
+  if (window.crypto && window.crypto.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+    const hex = Array.from(bytes, function (b) {
+      return b.toString(16).padStart(2, "0");
+    }).join("");
+
+    return hex.slice(0, 8) + "-" +
+      hex.slice(8, 12) + "-" +
+      hex.slice(12, 16) + "-" +
+      hex.slice(16, 20) + "-" +
+      hex.slice(20);
+  }
+
+  throw new Error(
+    "瀏覽器不支援安全的 UUID 產生功能，請改用新版瀏覽器。"
+  );
+}
+
+// 讀取 CSV，並以 Base64 保存原始檔案位元組
+function readFileAsBase64(file) {
+  return new Promise(function (resolve, reject) {
+    const reader = new FileReader();
+
+    reader.onload = function () {
+      const result = reader.result;
+      const comma = result.indexOf(",");
+
+      if (comma < 0) {
+        reject(new Error("無法讀取 CSV 的 Base64 資料。"));
+        return;
+      }
+
+      resolve(result.substring(comma + 1));
+    };
+
+    reader.onerror = function () {
+      reject(new Error("讀取 CSV 檔案失敗。"));
+    };
+
+    // Data URL 將檔案內容轉成 Base64
+    reader.readAsDataURL(file);
+  });
+}
+
+// Button 1：產生 DocumentReference JSON
+generateBtn.addEventListener("click", async function () {
+  statusOutput.textContent = "";
+  responseOutput.value = "";
+  resourceUrl.hidden = true;
+  resourceUrl.removeAttribute("href");
+  resourceUrl.textContent = "";
+
+  const file = csvInput.files[0];
+
+  if (!file) {
+    statusOutput.textContent = "請先選擇 detail CSV 檔案。";
+    return;
+  }
+
+  if (!file.name.toLowerCase().endsWith(".csv")) {
+    statusOutput.textContent = "請選擇副檔名為 .csv 的檔案。";
+    return;
+  }
+
+  generateBtn.disabled = true;
+
+  try {
+    const base64Data = await readFileAsBase64(file);
+    const docRefId = createUUID();
+
+    const documentReference = {
+      resourceType: "DocumentReference",
+      id: docRefId,
+      status: "current",
+      date: new Date().toISOString(),
+      description: "Detail CSV: " + file.name,
+      content: [
+        {
+          attachment: {
+            contentType: "text/csv",
+            title: file.name,
+            size: file.size,
+            data: base64Data
+          }
+        }
+      ]
+    };
+
+    jsonOutput.value = JSON.stringify(
+      documentReference,
+      null,
+      2
+    );
+
+    statusOutput.textContent =
+      "JSON 已產生。\n" +
+      "DocumentReference ID: " + docRefId +
+      "\nCSV 檔案: " + file.name +
+      "\n請檢查 JSON 後，再按 Button 2 上傳。";
+
+  } catch (error) {
+    statusOutput.textContent =
+      "產生 JSON 失敗：" + error.message;
+  } finally {
+    generateBtn.disabled = false;
+  }
+});
+
+// Button 2：將文字區的 JSON PUT 至 FHIR Server
+uploadBtn.addEventListener("click", async function () {
+  statusOutput.textContent = "";
+  responseOutput.value = "";
+  resourceUrl.hidden = true;
+  resourceUrl.removeAttribute("href");
+  resourceUrl.textContent = "";
+
+  let documentReference;
+
+  // 讀取使用者在文字區中的 JSON
+  try {
+    documentReference = JSON.parse(jsonOutput.value);
+  } catch (error) {
+    statusOutput.textContent =
+      "JSON 格式錯誤，請檢查第一個文字區。";
+    return;
+  }
+
+  // 基本檢查
+  if (documentReference.resourceType !== "DocumentReference") {
+    statusOutput.textContent =
+      'resourceType 必須為 "DocumentReference"。';
+    return;
+  }
+
+  const id = documentReference.id;
+
+  // FHIR resource id 可使用英文字母、數字、點、連字號
+  if (typeof id !== "string" ||
+      !/^[A-Za-z0-9.-]{1,64}$/.test(id)) {
+    statusOutput.textContent =
+      "DocumentReference.id 不符合 FHIR ID 格式。";
+    return;
+  }
+
+  if (!Array.isArray(documentReference.content) ||
+      documentReference.content.length === 0 ||
+      !documentReference.content[0].attachment ||
+      typeof documentReference.content[0].attachment.data
+        !== "string") {
+    statusOutput.textContent =
+      "找不到 content[0].attachment.data，請檢查 JSON。";
+    return;
+  }
+
+  const server = serverInput.value.trim().replace(/\/+$/, "");
+
+  if (!/^https?:\/\//i.test(server)) {
+    statusOutput.textContent =
+      "請輸入有效的 HTTP 或 HTTPS FHIR Server URL。";
+    return;
+  }
+
+  const url = server + "/DocumentReference/" +
+    encodeURIComponent(id);
+
+  uploadBtn.disabled = true;
+  statusOutput.textContent = "正在 PUT 上傳……";
+
+  try {
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/fhir+json",
+        "Accept": "application/fhir+json"
+      },
+      body: JSON.stringify(documentReference)
+    });
+
+    const responseText = await response.text();
+    responseOutput.value = responseText;
+
+    if (!response.ok) {
+      statusOutput.textContent =
+        "上傳失敗：HTTP " + response.status +
+        " " + response.statusText +
+        "\n請檢查伺服器回應內容。";
+      return;
+    }
+
+    // 優先採用伺服器回傳的 Location
+    let finalUrl = url;
+    const locationHeader = response.headers.get("Location");
+
+    if (locationHeader) {
+      try {
+        finalUrl = new URL(locationHeader, url).href;
+      } catch (error) {
+        finalUrl = url;
+      }
+    }
+
+    // 若回應 body 有 resource id，則使用該 ID
+    try {
+      const result = JSON.parse(responseText);
+
+      if (result.resourceType === "DocumentReference" &&
+          result.id) {
+        finalUrl = server + "/DocumentReference/" +
+          encodeURIComponent(result.id);
+      }
+    } catch (error) {
+      // 部分成功回應可能沒有 JSON body
+    }
+
+    resourceUrl.href = finalUrl;
+    resourceUrl.textContent = finalUrl;
+    resourceUrl.hidden = false;
+
+    statusOutput.textContent =
+      "HTTP " + response.status +
+      "：伺服器已接受此次 PUT 請求。\n" +
+      "請使用下方 URL 調閱 DocumentReference。";
+
+  } catch (error) {
+    responseOutput.value =
+      "無法取得伺服器回應：\n" + error.message;
+
+    statusOutput.textContent =
+      "上傳未能確認成功。請檢查網路、FHIR Server 狀態及 CORS 設定。";
+  } finally {
+    uploadBtn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>

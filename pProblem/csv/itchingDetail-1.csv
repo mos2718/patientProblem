@@ -1,0 +1,35 @@
+﻿problemCode,detailCode,detailName,detailNameEn,valueType,valueCode,valueDisplay,valueDisplayEn
+itching,severity,嚴重程度,Severity,code,mild,輕度,Mild
+itching,severity,嚴重程度,Severity,code,moderate,中度,Moderate
+itching,severity,嚴重程度,Severity,code,severe,重度,Severe
+itching,bodySite,搔癢部位,Body Site,code,scalp,頭皮,Scalp
+itching,bodySite,搔癢部位,Body Site,code,face,臉部,Face
+itching,bodySite,搔癢部位,Body Site,code,trunk,軀幹,Trunk
+itching,bodySite,搔癢部位,Body Site,code,arm,手臂,Arm
+itching,bodySite,搔癢部位,Body Site,code,leg,腿部,Leg
+itching,bodySite,搔癢部位,Body Site,code,hand,手部,Hand
+itching,bodySite,搔癢部位,Body Site,code,foot,足部,Foot
+itching,bodySite,搔癢部位,Body Site,code,genital,生殖器部位,Genital area
+itching,bodySite,搔癢部位,Body Site,code,generalized,全身性,Generalized
+itching,quality,搔癢感受,Itching Quality,code,prickling,刺癢,Prickling
+itching,quality,搔癢感受,Itching Quality,code,burning,灼熱感,Burning
+itching,quality,搔癢感受,Itching Quality,code,tingling,麻刺感,Tingling
+itching,onset,發生速度,Onset Speed,code,sudden,突然發生,Sudden onset
+itching,onset,發生速度,Onset Speed,code,gradual,逐漸發生,Gradual onset
+itching,duration,持續時間,Duration,code,less-than-1-hour,少於 1 小時,Less than 1 hour
+itching,duration,持續時間,Duration,code,1-to-24-hours,1 至 24 小時,1 to 24 hours
+itching,duration,持續時間,Duration,code,more-than-24-hours,超過 24 小時,More than 24 hours
+itching,frequency,發生頻率,Frequency,code,continuous,持續性,Continuous
+itching,frequency,發生頻率,Frequency,code,intermittent,間歇性,Intermittent
+itching,aggravating,加重因素,Aggravating Factor,code,scratching,搔抓,Scratching
+itching,aggravating,加重因素,Aggravating Factor,code,heat,高溫,Heat
+itching,aggravating,加重因素,Aggravating Factor,code,sweating,流汗,Sweating
+itching,aggravating,加重因素,Aggravating Factor,code,bathing,沐浴,Bathing
+itching,relieving,緩解因素,Relieving Factor,code,cooling,冰涼或降溫,Cooling
+itching,relieving,緩解因素,Relieving Factor,code,moisturizer,使用保濕用品,Moisturizer
+itching,relieving,緩解因素,Relieving Factor,code,antihistamine,使用抗組織胺藥物,Antihistamine
+itching,associated,伴隨症狀,Associated Symptom,code,rash,皮疹,Rash
+itching,associated,伴隨症狀,Associated Symptom,code,redness,發紅,Redness
+itching,associated,伴隨症狀,Associated Symptom,code,swelling,腫脹,Swelling
+itching,associated,伴隨症狀,Associated Symptom,code,dry-skin,皮膚乾燥,Dry skin
+itching,associated,伴隨症狀,Associated Symptom,code,blisters,水疱,Blisters

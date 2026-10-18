@@ -1,0 +1,56 @@
+{
+  "resourceType": "DocumentReference",
+  "id": "micro-ig-chest-discomfort-template",
+  "status": "current",
+  "docStatus": "final",
+  
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category",
+          "code": "clinical-note",
+          "display": "Clinical Note"
+        }
+      ],
+      "text": "Micro IG Specification"
+    }
+  ],
+  
+  "type": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "29857009",
+        "display": "Chest discomfort"
+      }
+    ],
+    "text": "胸部不舒服 Micro IG 規格"
+  },
+  
+  "subject": {
+    "type": "Observation",
+    "display": "Target Resource: Observation"
+  },
+  
+  "date": "2026-10-15T14:49:00+08:00",
+  
+  "description": "【文件說明】此 Micro IG 定義胸部不舒服（Chest Discomfort）主訴所需收集之臨床欄位、必填規則與 LOINC/SNOMED CT 碼集對映規格，適用於急診及心臟內科初診情境。",
+  
+  "content": [
+    {
+      "attachment": {
+        "contentType": "application/json",
+        "language": "zh-TW",
+        "data": "ewogICJtaWNyb0lHTmFtZSI6ICJDaGVzdERpc2NvbWZvcnRJRyIsCiAgInZlcnNpb24iOiAiMS4wLjAiLAogICJ0YXJnZXRSZXNvdXJjZSI6ICJPYnNlcnZhdGlvbiIsCiAgImZpZWxkcyI6IFsKICAgIHsgIm5hbWUiOiAicGFpblNjb3JlIiwgInR5cGUiOiAiaW50ZWdlciIsICJjb2RzcGFjZSI6ICJMT0lOQyA3MjUxMy01IiB9LAogICAgeyAibmFtZSI6ICJvbnNldFRpbWUiLCAidHlwZSI6ICJkYXRlVGltZSIgfQogIF0KfQ==",
+        "title": "chest_discomfort_spec.json",
+        "creation": "2026-10-15T14:49:00+08:00"
+      },
+      "format": {
+        "system": "http://ihe.net/fhir/ihe.formatcode.fhir/codesystem/formatcodes",
+        "code": "urn:ihe:pcc:handp:2008",
+        "display": "Micro IG JSON Specification"
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "resourceType": "Observation",
+  "status": "final",
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "https//misac/codesystem/categorycode",
+          "code": "patient_problem",
+          "display": "病人問題狀況"
+        }
+      ]
+    }
+  ],
+  "code": {
+    "coding": [
+      {
+        "system": "https//misac/codesystem/patient_problem_code",
+        "code": "{{problem.code}}",
+        "display": "{{problem.display}}"
+      }
+    ]
+  },
+  "subject": {
+    "reference": "Patient/{{input.patient_id}}"
+  },
+  "effectiveDateTime": "{{input.measure_time}}",
+  "component": []
+}
+
