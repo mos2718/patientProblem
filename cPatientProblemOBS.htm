@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>病人問題狀況 Observation 輸入</title>
+
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 20px;
+    background: #f3f6fa;
+    color: #263445;
+    font-family: Arial, "Noto Sans TC", sans-serif;
+  }
+
+  main {
+    max-width: 900px;
+    margin: auto;
+  }
+
+  h1 { font-size: 25px; margin-bottom: 8px; }
+  h2 { font-size: 19px; margin-top: 0; }
+
+  .intro { color: #526274; line-height: 1.7; }
+
+  .card {
+    background: white;
+    border: 1px solid #dce4ed;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+  }
+
+  .meta-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  label { line-height: 1.7; display: block; font-weight: bold; margin-top: 8px; }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    margin: 5px 0 12px;
+  }
+
+  button {
+    border: 0;
+    border-radius: 7px;
+    padding: 10px 15px;
+    margin: 4px 5px 4px 0;
+    background: #1769aa;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  button.secondary { background: #536579; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+
+  .detail-card {
+    border: 1px solid #dce4ed;
+    border-radius: 9px;
+    padding: 14px;
+    margin: 12px 0;
+  }
+
+  .detail-heading {
+    font-weight: bold;
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+  }
+
+  .detail-heading input { margin-top: 6px; }
+
+  .detail-title { font-size: 16px; }
+  .detail-code { color: #64748b; font-size: 12px; }
+
+  .value-options {
+    margin: 12px 0 0 26px;
+    padding-top: 10px;
+    border-top: 1px solid #edf1f5;
+  }
+
+  .value-options label {
+    display: block;
+    padding: 4px 0;
+    font-weight: normal;
+  }
+
+  .muted { color: #64748b; font-size: 13px; }
+  .status { white-space: pre-wrap; line-height: 1.6; }
+
+  textarea {
+    width: 100%;
+    min-height: 240px;
+    resize: vertical;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    padding: 12px;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+  }
+
+  .error { color: #b42318; }
+  .success { color: #18794e; }
+
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    .card { padding: 14px; }
+    h1 { font-size: 22px; }
+  }
+</style>
+</head>
+
+<body>
+<main>
+  <h1>病人問題狀況 Observation 輸入</h1>
+  <p class="intro">
+    讀取 DocumentReference 模板，解析目前問題狀況與 detail CSV 內容，為每個項目選擇對應值，產生並上傳 FHIR Observation。
+  </p>
+
+  <section class="card">
+    <h2>1. FHIR 設定與 DocumentReference 模板</h2>
+
+    <label for="server">FHIR Server URL</label>
+    <input id="server" type="text"
+      value="https://hapi.fhir.org/baseR4">
+
+    <label for="patientId">Patient ID</label>
+    <input id="patientId" type="text"
+      value="7158c01b-32ba-4fbd-a038-201a0a2a4e2a">
+
+    <label for="specUrl">Problem detail DocumentReference URL</label>
+    <input id="specUrl" type="text"
+      value="https://hapi.fhir.org/baseR4/DocumentReference/b0820715-6354-41ff-b08e-a0ce1c8ecf9a">
+
+    <button id="loadButton" onclick="loadSpec()">讀取規格模板</button>
+    <div id="loadStatus" class="status muted"></div>
+
+    <div id="docMeta" class="meta-box" style="display:none;">
+      <strong>當前處理病人問題狀況 (from DocumentReference):</strong>
+      <div>• 描述 (Description): <span id="docDescription" style="color:#1769aa; font-weight:bold;">-</span></div>
+      <div>• 上下文 (Context): <span id="docContext">-</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. 選擇紀錄項目</h2>
+    <p class="muted">
+      勾選需要紀錄的 detailCode。每個已勾選項目都會建立一個 component；
+      每個項目內的值以單選按鈕選擇。
+    </p>
+    <div id="detailOptions">
+      <p class="muted">請先讀取 DocumentReference 規格。</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>3. 產生 Observation JSON</h2>
+    <button onclick="generateJSON()">產生 JSON</button>
+    <button class="secondary" onclick="copyJSON()">複製 JSON</button>
+    <textarea id="jsonOutput" placeholder="產生的 FHIR Observation JSON 會顯示在這裡"></textarea>
+  </section>
+
+  <section class="card">
+    <h2>4. 上傳 FHIR Server</h2>
+    <button id="uploadButton" onclick="uploadObservation()">上傳 Observation</button>
+    <button class="secondary" onclick="openObservation()">開啟 Observation URL</button>
+    <div id="uploadStatus" class="status muted"></div>
+    <p id="observationUrl"></p>
+    <textarea id="responseOutput" placeholder="FHIR Server 回應會顯示在這裡"></textarea>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+const DETAIL_SYSTEM =
+  "https://example.org/fhir/CodeSystem/problem-detail";
+
+const PROBLEM_SYSTEM =
+  "https://example.org/fhir/CodeSystem/patient-problem";
+
+let detailRows = [];
+let lastObservationUrl = "";
+let currentDocInfo = {
+  description: "",
+  contextText: "",
+  problemCode: ""
+};
+
+/* HTML 顯示時避免 CSV 內容被當成 HTML */
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, function (char) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[char];
+  });
+}
+
+/* 讀取 CSV：支援雙引號、逗號及欄位內換行 */
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let quoted = false;
+
+  text = text.replace(/^\uFEFF/, "");
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (c === '"') {
+        quoted = false;
+      } else {
+        field += c;
+      }
+    } else {
+      if (c === '"' && field === "") {
+        quoted = true;
+      } else if (c === ",") {
+        row.push(field.trim());
+        field = "";
+      } else if (c === "\n") {
+        row.push(field.trim());
+        if (row.some(v => v !== "")) rows.push(row);
+        row = [];
+        field = "";
+      } else if (c !== "\r") {
+        field += c;
+      }
+    }
+  }
+
+  row.push(field.trim());
+  if (row.some(v => v !== "")) rows.push(row);
+
+  if (rows.length < 2) {
+    throw new Error("CSV 沒有資料列，或格式不正確。");
+  }
+
+  const headers = rows[0].map(h => h.trim());
+
+  return rows.slice(1).map(values => {
+    const obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = values[index] ?? "";
+    });
+    return obj;
+  });
+}
+
+/* 從不同可能的欄位名稱取值 */
+function getField(row, names) {
+  const keys = Object.keys(row);
+
+  for (const name of names) {
+    const key = keys.find(k => k.toLowerCase() === name.toLowerCase());
+    if (key && row[key] !== "") return String(row[key]).trim();
+  }
+
+  return "";
+}
+
+function normalizeRow(row) {
+  return {
+    problemCode: getField(row, [
+      "problemCode", "problem_code", "problem"
+    ]),
+    detailCode: getField(row, [
+      "detailCode", "detail_code"
+    ]),
+    detailChinese: getField(row, [
+      "detailChinese", "detailDisplay", "detailDisplayChinese",
+      "detailName", "detail", "ChineseDetail"
+    ]),
+    detailEnglish: getField(row, [
+      "detailEnglish", "detailNameEnglish", "EnglishDetail"
+    ]),
+    code: getField(row, [
+      "Code", "valueCode", "optionCode", "value_code"
+    ]),
+    chinese: getField(row, [
+      "Chinese", "valueChinese", "optionChinese", "display"
+    ]),
+    english: getField(row, [
+      "English", "valueEnglish", "optionEnglish"
+    ]),
+    valueType: getField(row, [
+      "valueType", "value_type", "type"
+    ]).toLowerCase(),
+    system: getField(row, [
+      "valueSystem", "codeSystem", "system"
+    ]),
+    unit: getField(row, ["unit"]),
+    ucum: getField(row, ["ucum", "unitCode"])
+  };
+}
+
+/* 從 DocumentReference 讀取 Base64 CSV 並呈現 description、context 資訊 */
+async function loadSpec() {
+  const button = document.getElementById("loadButton");
+  const status = document.getElementById("loadStatus");
+  const detailContainer = document.getElementById("detailOptions");
+  const docMeta = document.getElementById("docMeta");
+
+  button.disabled = true;
+  status.className = "status muted";
+  status.textContent = "正在讀取 DocumentReference…";
+  detailContainer.innerHTML = "";
+  docMeta.style.display = "none";
+
+  try {
+    const url = document.getElementById("specUrl").value.trim();
+
+    if (!url) throw new Error("請輸入 DocumentReference URL。");
+
+    const response = await fetch(url, {
+      headers: { "Accept": "application/fhir+json" }
+    });
+
+    if (!response.ok) {
+      throw new Error("讀取失敗，HTTP " + response.status);
+    }
+
+    const doc = await response.json();
+
+    if (doc.resourceType !== "DocumentReference") {
+      throw new Error("指定 URL 不是 FHIR DocumentReference。");
+    }
+
+    // 1. 提取 description 與 context 資訊
+    currentDocInfo.description = doc.description || "未提供問題描述 (No description)";
+    
+    let contextStr = [];
+    if (doc.context) {
+      if (doc.context.encounter && doc.context.encounter.length > 0) {
+        const encounters = doc.context.encounter.map(e => e.reference || e.display).filter(Boolean);
+        if (encounters.length > 0) contextStr.push("Encounter: " + encounters.join(", "));
+      }
+      if (doc.context.period) {
+        const p = doc.context.period;
+        contextStr.push(`Period: ${p.start || ''} ~ ${p.end || ''}`);
+      }
+      if (doc.context.event && doc.context.event.length > 0) {
+        const events = doc.context.event.map(e => e.text || (e.coding ? e.coding[0].display : "")).filter(Boolean);
+        if (events.length > 0) contextStr.push("Event: " + events.join(", "));
+      }
+    }
+    currentDocInfo.contextText = contextStr.length > 0 ? contextStr.join(" | ") : "無額外上下文 context 資訊";
+
+    // 更新 UI 顯示模板資訊
+    document.getElementById("docDescription").textContent = currentDocInfo.description;
+    document.getElementById("docContext").textContent = currentDocInfo.contextText;
+    docMeta.style.display = "block";
+
+    // 2. 提取 attachment 資料
+    const attachments = (doc.content || [])
+      .map(item => item.attachment || {})
+      .filter(att => att.data);
+
+    if (attachments.length === 0) {
+      throw new Error("DocumentReference.content 中找不到 attachment.data。");
+    }
+
+    const base64 = attachments[0].data;
+    const binary = atob(base64);
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+    const csvText = new TextDecoder("utf-8").decode(bytes);
+
+    const rawRows = parseCSV(csvText);
+    const allRows = rawRows.map(normalizeRow);
+
+    // 通用處理：載入所有包含 detailCode 的列
+    detailRows = allRows.filter(row => row.detailCode !== "");
+
+    if (detailRows.length === 0) {
+      throw new Error("CSV 中找不到有效的 detailCode 資料。請確認 CSV 欄位與內容。");
+    }
+
+    // 取得第一個 problemCode 當作預設 code
+    currentDocInfo.problemCode = detailRows[0].problemCode || "patient-problem";
+
+    renderDetails();
+
+    status.className = "status success";
+    status.textContent =
+      "規格讀取成功。CSV 共 " + rawRows.length +
+      " 筆；問題項目共 " + detailRows.length + " 筆。";
+
+  } catch (error) {
+    status.className = "status error";
+    status.textContent = "讀取失敗：" + error.message;
+    detailContainer.innerHTML =
+      '<p class="error">請檢查 URL、CSV 欄位及 Server CORS 設定。</p>';
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* 依 detailCode 分組並顯示所有選項 */
+function renderDetails() {
+  const container = document.getElementById("detailOptions");
+  container.innerHTML = "";
+
+  const groups = {};
+
+  detailRows.forEach(row => {
+    if (!groups[row.detailCode]) groups[row.detailCode] = [];
+    groups[row.detailCode].push(row);
+  });
+
+  const detailCodes = Object.keys(groups);
+
+  detailCodes.forEach((detailCode, index) => {
+    const rows = groups[detailCode];
+    const first = rows[0];
+
+    const detailChinese = first.detailChinese || detailCode;
+    const detailEnglish = first.detailEnglish;
+
+    const card = document.createElement("div");
+    card.className = "detail-card";
+    card.dataset.detailCode = detailCode;
+
+    const heading = document.createElement("label");
+    heading.className = "detail-heading";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "detail-checkbox";
+    checkbox.value = detailCode;
+
+    const headingText = document.createElement("span");
+    headingText.innerHTML =
+      '<span class="detail-title">' +
+      escapeHTML(detailChinese) +
+      (detailEnglish ? " (" + escapeHTML(detailEnglish) + ")" : "") +
+      '</span><br><span class="detail-code">' +
+      escapeHTML(detailCode) + '</span>';
+
+    heading.appendChild(checkbox);
+    heading.appendChild(headingText);
+    card.appendChild(heading);
+
+    const valueOptions = document.createElement("div");
+    valueOptions.className = "value-options";
+    valueOptions.hidden = true;
+
+    const validRows = rows.filter(row => row.code !== "");
+
+    if (validRows.length === 0) {
+      valueOptions.innerHTML =
+        '<p class="muted">此項目沒有可選的 Code 值。</p>';
+    } else {
+      validRows.forEach((row) => {
+        const label = document.createElement("label");
+        const radio = document.createElement("input");
+
+        radio.type = "radio";
+        radio.name = "value_" + index;
+        radio.value = row.code;
+        radio.dataset.detailCode = detailCode;
+        radio.dataset.valueType = row.valueType;
+        radio.dataset.system = row.system;
+        radio.dataset.unit = row.unit;
+        radio.dataset.ucum = row.ucum;
+
+        if (row.code === "0") radio.checked = true;
+
+        label.appendChild(radio);
+
+        const display = [row.chinese, row.english]
+          .filter(Boolean)
+          .join(" / ");
+
+        label.appendChild(
+          document.createTextNode(
+            " " + (display || row.code) + " [" + row.code + "]"
+          )
+        );
+
+        valueOptions.appendChild(label);
+      });
+    }
+
+    checkbox.addEventListener("change", () => {
+      valueOptions.hidden = !checkbox.checked;
+    });
+
+    card.appendChild(valueOptions);
+    container.appendChild(card);
+  });
+}
+
+/* 將一個 detailCode 的選擇轉成 FHIR value[x] */
+function makeValue(row, radio) {
+  const code = radio.value;
+  const display = row.chinese || row.english || code;
+  const system = radio.dataset.system ||
+    (DETAIL_SYSTEM + "/" + row.detailCode);
+
+  const type = (radio.dataset.valueType || "").toLowerCase();
+
+  if (["integer", "valueinteger"].includes(type)) {
+    const number = Number(code);
+    if (!Number.isFinite(number)) {
+      throw new Error(row.detailCode + " 的數值不是有效整數。");
+    }
+    return { valueInteger: Math.trunc(number) };
+  }
+
+  if (["decimal", "number", "quantity", "valuequantity"].includes(type)) {
+    const number = Number(code);
+    if (!Number.isFinite(number)) {
+      throw new Error(row.detailCode + " 的數值不是有效數字。");
+    }
+
+    const quantity = { value: number };
+
+    if (row.unit) quantity.unit = row.unit;
+    if (row.ucum) {
+      quantity.system = "http://unitsofmeasure.org";
+      quantity.code = row.ucum;
+    }
+
+    return { valueQuantity: quantity };
+  }
+
+  if (["boolean", "valueboolean"].includes(type)) {
+    const bool = /^(true|1|yes)$/i.test(code);
+    return { valueBoolean: bool };
+  }
+
+  return {
+    valueCodeableConcept: {
+      coding: [{
+        system: system,
+        code: code,
+        display: display
+      }],
+      text: display
+    }
+  };
+}
+
+/* 產生 Observation：每個勾選的 detailCode 都加入 component */
+function generateJSON() {
+  try {
+    const server = document.getElementById("server").value.trim().replace(/\/+$/, "");
+    const patientId = document.getElementById("patientId").value.trim();
+
+    if (!server) throw new Error("請輸入 FHIR Server URL。");
+    if (!patientId) throw new Error("請輸入 Patient ID。");
+    if (detailRows.length === 0) {
+      throw new Error("請先讀取 detail CSV 規格。");
+    }
+
+    const cards = document.querySelectorAll(".detail-card");
+    const components = [];
+
+    cards.forEach(card => {
+      const checkbox = card.querySelector(".detail-checkbox");
+      if (!checkbox.checked) return;
+
+      const detailCode = checkbox.value;
+      const selectedRadio = card.querySelector('input[type="radio"]:checked');
+
+      if (!selectedRadio) {
+        throw new Error("請為已勾選的 " + detailCode + " 選擇一個值。");
+      }
+
+      const row = detailRows.find(item =>
+        item.detailCode === detailCode &&
+        item.code === selectedRadio.value
+      );
+
+      if (!row) {
+        throw new Error("找不到 " + detailCode + " 對應的選項資料。");
+      }
+
+      const component = {
+        code: {
+          coding: [{
+            system: DETAIL_SYSTEM,
+            code: detailCode,
+            display: row.detailChinese || detailCode
+          }],
+          text: row.detailChinese || detailCode
+        }
+      };
+
+      Object.assign(component, makeValue(row, selectedRadio));
+      components.push(component);
+    });
+
+    if (components.length === 0) {
+      throw new Error("請至少勾選一個 detailCode。");
+    }
+
+    // 使用 DocumentReference 解析出的 description 作為 display 與 text
+    const problemDisplay = currentDocInfo.description || currentDocInfo.problemCode;
+
+    const observation = {
+      resourceType: "Observation",
+      status: "final",
+      category: [{
+        coding: [{
+          system: "http://terminology.hl7.org/CodeSystem/observation-category",
+          code: "survey",
+          display: "Survey"
+        }]
+      }],
+      code: {
+        coding: [{
+          system: PROBLEM_SYSTEM,
+          code: currentDocInfo.problemCode || "patient-problem",
+          display: problemDisplay
+        }],
+        text: problemDisplay
+      },
+      subject: {
+        reference: "Patient/" + patientId
+      },
+      effectiveDateTime: new Date().toISOString(),
+      component: components
+    };
+
+    document.getElementById("jsonOutput").value = JSON.stringify(observation, null, 2);
+    document.getElementById("uploadStatus").textContent = "";
+    document.getElementById("observationUrl").textContent = "";
+
+  } catch (error) {
+    alert("無法產生 JSON：" + error.message);
+  }
+}
+
+/* 複製 JSON */
+async function copyJSON() {
+  const text = document.getElementById("jsonOutput").value;
+
+  if (!text) {
+    alert("請先產生 JSON。");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    alert("JSON 已複製。");
+  } catch (error) {
+    const area = document.getElementById("jsonOutput");
+    area.focus();
+    area.select();
+    alert("若未自動複製，請使用 Ctrl+C 複製。");
+  }
+}
+
+/* POST Observation 至 FHIR Server */
+async function uploadObservation() {
+  const status = document.getElementById("uploadStatus");
+  const responseOutput = document.getElementById("responseOutput");
+  const urlOutput = document.getElementById("observationUrl");
+  const button = document.getElementById("uploadButton");
+
+  status.className = "status muted";
+  urlOutput.textContent = "";
+
+  let resource;
+
+  try {
+    const json = document.getElementById("jsonOutput").value;
+    if (!json) {
+      generateJSON();
+    }
+
+    const updatedJSON = document.getElementById("jsonOutput").value;
+    if (!updatedJSON) return;
+
+    resource = JSON.parse(updatedJSON);
+
+    const server = document.getElementById("server").value.trim().replace(/\/+$/, "");
+
+    button.disabled = true;
+    status.textContent = "正在上傳 Observation…";
+
+    const response = await fetch(server + "/Observation", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/fhir+json",
+        "Accept": "application/fhir+json"
+      },
+      body: JSON.stringify(resource)
+    });
+
+    const responseText = await response.text();
+    responseOutput.value = responseText;
+
+    if (!response.ok) {
+      throw new Error(
+        "上傳失敗，HTTP " + response.status + "\n" + responseText
+      );
+    }
+
+    let result = {};
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {}
+
+    const location = response.headers.get("Location");
+    const id = result.id || "";
+
+    if (location) {
+      lastObservationUrl = new URL(location, server).href;
+    } else if (id) {
+      lastObservationUrl = server + "/Observation/" + id;
+    } else {
+      lastObservationUrl = "";
+    }
+
+    status.className = "status success";
+    status.textContent =
+      "上傳成功。" +
+      (id ? "\nObservation ID: " + id : "");
+
+    urlOutput.textContent = lastObservationUrl
+      ? "Observation URL: " + lastObservationUrl
+      : "Server 未回傳可辨識的 Observation URL。";
+
+  } catch (error) {
+    status.className = "status error";
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* 開啟上傳後的 Observation */
+function openObservation() {
+  if (!lastObservationUrl) {
+    alert("尚未取得 Observation URL，請先成功上傳。");
+    return;
+  }
+
+  window.open(lastObservationUrl, "_blank", "noopener");
+}
+</script>
+</body>
+</html>
