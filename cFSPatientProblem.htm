@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FHIR 疼痛細節紀錄與發送</title>
+  <style>
+    :root {
+      --primary-color: #2b6cb0;
+      --primary-hover: #2c5282;
+      --bg-color: #f7fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --text-color: #2d3748;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 650px;
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #1a202c;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+
+    input[type="range"] {
+      padding: 0;
+    }
+
+    .range-value {
+      font-weight: bold;
+      color: #e53e3e;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .result-card {
+      margin-top: 20px;
+      padding: 16px;
+      background-color: #edf2f7;
+      border-radius: 4px;
+      border-left: 4px solid var(--primary-color);
+      display: none;
+      word-break: break-all;
+    }
+
+    .result-card a {
+      color: var(--primary-color);
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    pre {
+      background: #2d3748;
+      color: #f7fafc;
+      padding: 12px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>FHIR 疼痛細節評估紀錄 (Observation)</h2>
+  
+  <form id="painForm">
+    <div class="form-group">
+      <label for="patientId">病人 ID (Patient ID)</label>
+      <input type="text" id="patientId" value="7158c01b-32ba-4fbd-a038-201a0a2a4e2a" readonly style="background:#edf2f7;">
+    </div>
+
+    <div class="form-group">
+      <label for="painScore">疼痛分數 (Pain Score: 0 - 10): <span id="scoreDisplay" class="range-value">5</span></label>
+      <input type="range" id="painScore" min="0" max="10" value="5" oninput="document.getElementById('scoreDisplay').innerText = this.value">
+    </div>
+
+    <div class="form-group">
+      <label for="bodySite">疼痛部位 (Body Site)</label>
+      <select id="bodySite">
+        <option value="38266002|Head structural body part|頭部">頭部</option>
+        <option value="21522001|Abdominal structure|腹部">腹部</option>
+        <option value="122496007|Thoracic structure|胸部">胸部</option>
+        <option value="8205005|Lower back structure|下背部">下背部</option>
+        <option value="181216001|Entire arm|手臂">手臂</option>
+        <option value="181313003|Entire leg|腿部">腿部</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="painType">疼痛性質 (Type/Quality)</label>
+      <select id="painType">
+        <option value="29539007|Throbbing pain|鈍痛 / 抽痛">鈍痛 / 抽痛 (Throbbing)</option>
+        <option value="30138002|Sharp pain|刺痛">刺痛 (Sharp)</option>
+        <option value="82271004|Burning pain|灼熱痛">灼熱痛 (Burning)</option>
+        <option value="255301001|Aching pain|酸痛">酸痛 (Aching)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="note">補充備註 (Note)</label>
+      <textarea id="note" rows="3" placeholder="請輸入疼痛相關補充說明..."></textarea>
+    </div>
+
+    <button type="submit" id="submitBtn">產生並發送至 FHIR Server</button>
+  </form>
+
+  <div id="resultCard" class="result-card">
+    <h3>上傳成功！</h3>
+    <p>Observation ID: <strong id="resId"></strong></p>
+    <p>資料調閱 URL: <br><a id="resUrl" href="" target="_blank"></a></p>
+    <p>發送之 JSON 內容：</p>
+    <pre id="jsonPreview"></pre>
+  </div>
+</div>
+
+<script>
+  const FHIR_BASE_URL = "https://hapi.fhir.org/baseR4";
+
+  document.getElementById('painForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerText = "發送中...";
+
+    const patientId = document.getElementById('patientId').value;
+    const painScore = parseInt(document.getElementById('painScore').value);
+    
+    // 解析 SNOMED CT 數值
+    const [siteCode, siteDisplay, siteZh] = document.getElementById('bodySite').value.split('|');
+    const [typeCode, typeDisplay, typeZh] = document.getElementById('painType').value.split('|');
+    const noteText = document.getElementById('note').value;
+
+    // 電腦目前時間 (ISO 8601 格式)
+    const currentTime = new Date().toISOString();
+
+    // 建構 FHIR R4 Observation 資源 (疼痛量測細節)
+    const fhirObservation = {
+      "resourceType": "Observation",
+      "status": "final",
+      "category": [
+        {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+              "code": "vital-signs",
+              "display": "Vital Signs"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "72514-3",
+            "display": "Pain severity - 0-10 verbal numeric rating [Score] - Reported"
+          }
+        ],
+        "text": "Pain severity score"
+      },
+      "subject": {
+        "reference": `Patient/${patientId}`
+      },
+      "effectiveDateTime": currentTime,
+      "valueQuantity": {
+        "value": painScore,
+        "unit": "{score}",
+        "system": "http://unitsofmeasure.org",
+        "code": "{score}"
+      },
+      "bodySite": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": siteCode,
+            "display": siteDisplay
+          }
+        ],
+        "text": siteZh
+      },
+      "component": [
+        {
+          "code": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": typeCode,
+                "display": typeDisplay
+              }
+            ],
+            "text": "Pain Quality"
+          }
+        }
+      ]
+    };
+
+    // 若有填寫備註則加入
+    if (noteText.trim() !== "") {
+      fhirObservation.note = [{ "text": noteText }];
+    }
+
+    try {
+      const response = await fetch(`${FHIR_BASE_URL}/Observation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/fhir+json'
+        },
+        body: JSON.stringify(fhirObservation)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}`);
+      }
+
+      const resultData = await response.json();
+      const readUrl = `${FHIR_BASE_URL}/Observation/${resultData.id}`;
+
+      // 呈現結果
+      document.getElementById('resId').innerText = resultData.id;
+      
+      const resUrlElem = document.getElementById('resUrl');
+      resUrlElem.href = readUrl;
+      resUrlElem.innerText = readUrl;
+
+      document.getElementById('jsonPreview').innerText = JSON.stringify(resultData, null, 2);
+      document.getElementById('resultCard').style.display = 'block';
+
+    } catch (error) {
+      alert("發送至 FHIR Server 失敗: " + error.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = "產生並發送至 FHIR Server";
+    }
+  });
+</script>
+
+</body>
+</html>
