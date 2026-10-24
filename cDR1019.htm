@@ -1,0 +1,603 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detail Micro-IG DocumentReference</title>
+
+<style>
+body {
+  max-width: 1000px;
+  margin: 24px auto;
+  padding: 0 16px;
+  font-family: Arial, "Microsoft JhengHei", sans-serif;
+  line-height: 1.6;
+  color: #222;
+  background: #f5f7fa;
+}
+h2 { color: #245580; }
+.panel {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+label {
+  display: block;
+  margin: 12px 0 5px;
+  font-weight: bold;
+}
+input[type="text"], input[type="file"], select, textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #bbb;
+  border-radius: 5px;
+  font: inherit;
+  background: white;
+}
+textarea {
+  min-height: 260px;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  white-space: pre;
+  overflow: auto;
+}
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 8px 0;
+}
+.radio-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 4px 0;
+  font-weight: normal;
+}
+.radio-group input { width: auto; }
+button {
+  padding: 10px 18px;
+  margin: 12px 8px 4px 0;
+  border: 0;
+  border-radius: 5px;
+  background: #1769aa;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+}
+button:hover { background: #104e80; }
+button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+.hint { color: #555; font-size: 13px; }
+#status { white-space: pre-wrap; }
+#resourceUrl {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>FHIR R4 Detail Micro-IG DocumentReference</h2>
+
+<div class="panel">
+  <label for="serverUrl">FHIR Server URL</label>
+  <input id="serverUrl" type="text"
+    value="https://hapi.fhir.org/baseR4">
+
+  <label>1. 目標 FHIR Resource</label>
+  <div class="radio-group">
+    <label>
+      <input type="radio" name="resourceType"
+        value="observation" checked>
+      Observation
+    </label>
+    <label>
+      <input type="radio" name="resourceType"
+        value="condition">
+      Condition
+    </label>
+    <label>
+      <input type="radio" name="resourceType"
+        value="procedure">
+      Procedure
+    </label>
+    <label>
+      <input type="radio" name="resourceType"
+        value="other">
+      Other
+    </label>
+  </div>
+
+  <div id="otherResourceBox" hidden>
+    <label for="otherResource">Other Resource 名稱</label>
+    <input id="otherResource" type="text"
+      placeholder="例如 MedicationRequest">
+  </div>
+
+  <label for="microIG">2. Micro-IG 種類／識別碼</label>
+  <input id="microIG" type="text"
+    placeholder="例如 observation-chest-discomfort"
+    value="observation-chest-discomfort">
+
+  <label for="version">3. Micro-IG 版本</label>
+  <input id="version" type="text"
+    value="1.0.0" placeholder="例如 1.0.0">
+
+  <label for="description">4. 文件說明</label>
+  <textarea id="description" style="min-height:90px"
+    placeholder="說明此 Micro-IG 的臨床目的、適用情境及規格內容">胸部不舒服情境之 Observation Micro-IG 規格。</textarea>
+
+  <label for="dataFormat">5. 規格資料檔格式</label>
+  <select id="dataFormat">
+    <option value="csv" selected>CSV (.csv)</option>
+    <option value="json">JSON (.json)</option>
+    <option value="md">Markdown (.md)</option>
+    <option value="js">JavaScript (.js)</option>
+    <option value="html">HTML (.html)</option>
+    <option value="pdf">PDF (.pdf)</option>
+    <option value="zip">ZIP (.zip)</option>
+    <option value="txt">Text (.txt)</option>
+    <option value="other">Other（自訂 MIME type）</option>
+  </select>
+
+  <div id="otherMimeBox" hidden>
+    <label for="otherMime">自訂 MIME type</label>
+    <input id="otherMime" type="text"
+      placeholder="例如 application/xml">
+  </div>
+
+  <label for="fileInput">6. 選擇規格資料檔案</label>
+  <input id="fileInput" type="file" accept=".csv,text/csv">
+
+  <p class="hint">
+    附件內容會以 Base64 保存於
+    DocumentReference.content[0].attachment.data。
+    檔案格式選單決定 contentType，請與實際檔案格式一致。
+  </p>
+
+  <button id="generateBtn" type="button">
+    Button 1：產生 JSON
+  </button>
+</div>
+
+<div class="panel">
+  <label for="jsonOutput">DocumentReference JSON（可編輯）</label>
+  <textarea id="jsonOutput" spellcheck="false"
+    placeholder="按 Button 1 後，JSON 將顯示於此"></textarea>
+
+  <button id="uploadBtn" type="button">
+    Button 2：PUT 上傳 FHIR Server
+  </button>
+</div>
+
+<div class="panel">
+  <label for="responseOutput">FHIR Server 回應結果</label>
+  <textarea id="responseOutput" readonly spellcheck="false"
+    placeholder="上傳後的伺服器回應顯示於此"></textarea>
+
+  <label>DocumentReference 調閱 URL</label>
+  <a id="resourceUrl" hidden target="_blank"
+    rel="noopener noreferrer"></a>
+
+  <p id="status" role="status"></p>
+</div>
+
+<script>
+"use strict";
+
+const DEFAULT_SERVER = "https://hapi.fhir.org/baseR4";
+
+const $ = function(id) {
+  return document.getElementById(id);
+};
+
+// 目標 Resource 的 Radio Button
+document.querySelectorAll('input[name="resourceType"]')
+  .forEach(function(radio) {
+    radio.addEventListener("change", function() {
+      $("otherResourceBox").hidden = radio.value !== "other";
+    });
+  });
+
+// 檔案格式選單
+$("dataFormat").addEventListener("change", function() {
+  $("otherMimeBox").hidden = this.value !== "other";
+  const acceptMap = {
+    csv: ".csv,text/csv",
+    json: ".json,application/json",
+    md: ".md,text/markdown",
+    js: ".js,text/javascript",
+    html: ".html,text/html",
+    pdf: ".pdf,application/pdf",
+    zip: ".zip,application/zip",
+    txt: ".txt,text/plain",
+    other: ""
+  };
+  $("fileInput").setAttribute(
+    "accept", acceptMap[this.value] || ""
+  );
+});
+
+// 產生 UUID
+function createUUID() {
+  if (window.crypto && window.crypto.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  if (window.crypto && window.crypto.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+    const hex = Array.from(bytes, function(b) {
+      return b.toString(16).padStart(2, "0");
+    }).join("");
+
+    return hex.slice(0, 8) + "-" +
+      hex.slice(8, 12) + "-" +
+      hex.slice(12, 16) + "-" +
+      hex.slice(16, 20) + "-" +
+      hex.slice(20);
+  }
+
+  throw new Error("瀏覽器不支援安全 UUID 產生功能。");
+}
+
+// 讀取檔案並取得 Base64
+// Data URL 的 Base64 部分代表原始檔案位元組
+function readFileAsBase64(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+
+    reader.onload = function() {
+      const result = reader.result;
+      const comma = result.indexOf(",");
+
+      if (comma < 0) {
+        reject(new Error("無法取得 Base64 資料。"));
+        return;
+      }
+
+      resolve(result.substring(comma + 1));
+    };
+
+    reader.onerror = function() {
+      reject(new Error("檔案讀取失敗。"));
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+// 將 Resource 名稱轉為顯示文字
+function getResourceInfo() {
+  const selected = document.querySelector(
+    'input[name="resourceType"]:checked'
+  ).value;
+
+  if (selected === "other") {
+    const name = $("otherResource").value.trim();
+
+    if (!/^[A-Z][A-Za-z0-9]{0,63}$/.test(name)) {
+      throw new Error(
+        "Other Resource 名稱請使用有效的 FHIR Resource 名稱，" +
+        "例如 MedicationRequest。"
+      );
+    }
+
+    return { code: "other", display: name };
+  }
+
+  const map = {
+    observation: "Observation",
+    condition: "Condition",
+    procedure: "Procedure"
+  };
+
+  return {
+    code: selected,
+    display: map[selected]
+  };
+}
+
+// 檔案格式與 MIME type
+function getMimeType(format) {
+  const map = {
+    csv: "text/csv",
+    json: "application/json",
+    md: "text/markdown",
+    js: "text/javascript",
+    html: "text/html",
+    pdf: "application/pdf",
+    zip: "application/zip",
+    txt: "text/plain"
+  };
+
+  if (format === "other") {
+    const mime = $("otherMime").value.trim();
+
+    if (!/^[A-Za-z0-9!#$&^_.+-]+\/[A-Za-z0-9!#$&^_.+-]+$/.test(mime)) {
+      throw new Error("請輸入有效的 MIME type，例如 application/xml。");
+    }
+
+    return mime;
+  }
+
+  return map[format];
+}
+
+// Button 1：產生 JSON
+$("generateBtn").addEventListener("click", async function() {
+  $("status").textContent = "";
+  $("responseOutput").value = "";
+  $("resourceUrl").hidden = true;
+  $("resourceUrl").removeAttribute("href");
+
+  const file = $("fileInput").files[0];
+
+  if (!file) {
+    $("status").textContent = "請先選擇規格資料檔案。";
+    return;
+  }
+
+  const microIG = $("microIG").value.trim();
+  const version = $("version").value.trim();
+  const description = $("description").value.trim();
+
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(microIG)) {
+    $("status").textContent =
+      "Micro-IG 識別碼不可空白，且僅可使用英數字、點、底線及連字號。";
+    return;
+  }
+
+  if (!/^[A-Za-z0-9][A-Za-z0-9.+-]{0,63}$/.test(version)) {
+    $("status").textContent =
+      "請輸入有效版本，例如 1.0.0。";
+    return;
+  }
+
+  if (!description) {
+    $("status").textContent = "請輸入文件說明。";
+    return;
+  }
+
+  $("generateBtn").disabled = true;
+
+  try {
+    const resource = getResourceInfo();
+    const format = $("dataFormat").value;
+    const mimeType = getMimeType(format);
+    const base64Data = await readFileAsBase64(file);
+    const id = createUUID();
+
+    // 依 HackMD DR JSON Template 的欄位概念建立資源
+    const documentReference = {
+      resourceType: "DocumentReference",
+      id: id,
+
+      masterIdentifier: {
+        system:
+          "https://example.org/fhir/identifier/micro-ig-version",
+        value: microIG + "|" + version
+      },
+
+      identifier: [
+        {
+          system:
+            "https://example.org/fhir/identifier/micro-ig",
+          value: microIG
+        }
+      ],
+
+      status: "current",
+
+      docStatus: "final",
+
+      type: {
+        coding: [
+          {
+            system:
+              "https://example.org/fhir/CodeSystem/document-type",
+            code: "detail-micro-ig",
+            display: "Detail Micro-IG Specification"
+          }
+        ],
+        text: "Detail Micro-IG 規格文件"
+      },
+
+      category: [
+        {
+          coding: [
+            {
+              system:
+                "https://example.org/fhir/CodeSystem/micro-ig-resource",
+              code: resource.code,
+              display: resource.display
+            }
+          ],
+          text: "目標 FHIR Resource"
+        }
+      ],
+
+      date: new Date().toISOString(),
+
+      description: description,
+
+      content: [
+        {
+          attachment: {
+            contentType: mimeType,
+            title: file.name,
+            size: file.size,
+            data: base64Data
+          }
+        }
+      ],
+
+      context: {
+        practiceSetting: {
+          coding: [
+            {
+              system:
+                "https://example.org/fhir/CodeSystem/micro-ig-purpose",
+              code: microIG,
+              display: microIG
+            }
+          ],
+          text: "Micro-IG 用途"
+        }
+      }
+    };
+
+    $("jsonOutput").value = JSON.stringify(
+      documentReference, null, 2
+    );
+
+    $("status").textContent =
+      "JSON 已產生。\n" +
+      "DocumentReference.id: " + id + "\n" +
+      "Resource: " + resource.display + "\n" +
+      "Micro-IG: " + microIG + "\n" +
+      "Version: " + version + "\n" +
+      "附件: " + file.name + "\n" +
+      "格式: " + mimeType + "\n" +
+      "請確認 JSON 後，再按 Button 2 上傳。";
+
+  } catch (error) {
+    $("status").textContent = "產生失敗：" + error.message;
+  } finally {
+    $("generateBtn").disabled = false;
+  }
+});
+
+// Button 2：PUT 文字區中的 JSON
+$("uploadBtn").addEventListener("click", async function() {
+  $("status").textContent = "";
+  $("responseOutput").value = "";
+  $("resourceUrl").hidden = true;
+  $("resourceUrl").removeAttribute("href");
+
+  let doc;
+
+  try {
+    doc = JSON.parse($("jsonOutput").value);
+  } catch (error) {
+    $("status").textContent =
+      "JSON 格式錯誤，請檢查第一個文字區。";
+    return;
+  }
+
+  if (doc.resourceType !== "DocumentReference") {
+    $("status").textContent =
+      'resourceType 必須為 "DocumentReference"。';
+    return;
+  }
+
+  if (typeof doc.id !== "string" ||
+      !/^[A-Za-z0-9.-]{1,64}$/.test(doc.id)) {
+    $("status").textContent =
+      "DocumentReference.id 格式不正確。";
+    return;
+  }
+
+  if (!Array.isArray(doc.content) ||
+      doc.content.length === 0 ||
+      !doc.content[0].attachment ||
+      typeof doc.content[0].attachment.data !== "string") {
+    $("status").textContent =
+      "缺少 content[0].attachment.data。";
+    return;
+  }
+
+  const server = $("serverUrl").value.trim().replace(/\/+$/, "");
+
+  if (!/^https?:\/\/[^/]+/i.test(server)) {
+    $("status").textContent = "FHIR Server URL 不正確。";
+    return;
+  }
+
+  const url = server + "/DocumentReference/" +
+    encodeURIComponent(doc.id);
+
+  $("uploadBtn").disabled = true;
+  $("status").textContent = "正在上傳……";
+
+  try {
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/fhir+json",
+        "Accept": "application/fhir+json"
+      },
+      body: JSON.stringify(doc)
+    });
+
+    const responseText = await response.text();
+    $("responseOutput").value = responseText;
+
+    if (!response.ok) {
+      $("status").textContent =
+        "上傳失敗：HTTP " + response.status + " " +
+        response.statusText + "\n請檢查伺服器回應。";
+      return;
+    }
+
+    let finalUrl = url;
+
+    // 若伺服器回傳 Location，優先採用
+    const location = response.headers.get("Location");
+
+    if (location) {
+      try {
+        finalUrl = new URL(location, url).href;
+      } catch (error) {
+        finalUrl = url;
+      }
+    }
+
+    // 若回應 JSON 有 Resource ID，使用該 ID
+    try {
+      const result = JSON.parse(responseText);
+
+      if (result.resourceType === "DocumentReference" &&
+          result.id) {
+        finalUrl = server + "/DocumentReference/" +
+          encodeURIComponent(result.id);
+      }
+    } catch (error) {
+      // 無 JSON body 時使用 PUT URL
+    }
+
+    $("resourceUrl").href = finalUrl;
+    $("resourceUrl").textContent = finalUrl;
+    $("resourceUrl").hidden = false;
+
+    $("status").textContent =
+      "HTTP " + response.status +
+      "：伺服器已接受 PUT 請求。\n" +
+      "請點選下方 URL 調閱文件；建議再以 GET 驗證。";
+
+  } catch (error) {
+    $("responseOutput").value =
+      "無法取得伺服器回應：\n" + error.message;
+
+    $("status").textContent =
+      "無法確認上傳結果。請檢查網路、伺服器及 CORS 設定。";
+  } finally {
+    $("uploadBtn").disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
