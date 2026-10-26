@@ -1,0 +1,600 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FHIR Micro-IG DocumentReference 上傳</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  font-family: Arial, "Noto Sans TC", sans-serif;
+  max-width: 1000px;
+  margin: 24px auto;
+  padding: 0 16px;
+  color: #263746;
+  background: #f5f7fa;
+  line-height: 1.6;
+}
+h1 { font-size: 24px; margin-bottom: 6px; }
+h2 { font-size: 18px; margin-top: 0; }
+p.note { color: #617181; font-size: 14px; }
+section {
+  background: white;
+  border: 1px solid #dce3ea;
+  border-radius: 10px;
+  padding: 18px;
+  margin: 16px 0;
+}
+label { display: block; font-weight: 600; margin: 10px 0 4px; }
+input, select, textarea {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #bdc9d5;
+  border-radius: 6px;
+  font: inherit;
+  background: white;
+}
+textarea {
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  min-height: 180px;
+  resize: vertical;
+}
+button {
+  border: 0;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin: 8px 6px 0 0;
+  background: #1769aa;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+button.secondary { background: #526779; }
+button.upload { background: #18845b; }
+button:hover { opacity: .88; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.radio-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.radio-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: normal;
+}
+.radio-row input { width: auto; }
+.status {
+  padding: 10px;
+  background: #eef4f8;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media(max-width:600px) {
+  .grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<h1>Q3：上傳 detail CSV 為 FHIR DocumentReference</h1>
+<p class="note">
+  教學原型，使用虛構資料。支援含 selectionType 的新版 CSV，
+  也可讀取原有 8 欄格式。
+</p>
+
+<section>
+<h2>1. 伺服器與規格檔</h2>
+<label for="server">FHIR Server URL</label>
+<input id="server" value="https://hapi.fhir.org/baseR4">
+
+<div class="grid">
+  <div>
+    <label for="docId">DocumentReference ID（UUID）</label>
+    <input id="docId">
+    <button type="button" class="secondary" id="newId">重新產生 UUID</button>
+  </div>
+  <div>
+    <label for="csvFile">選擇 detail 規格檔</label>
+    <input id="csvFile" type="file" accept=".csv,text/csv">
+  </div>
+</div>
+
+<label for="format">資料檔格式</label>
+<select id="format">
+  <option value="text/csv">text/csv</option>
+  <option value="application/json">application/json</option>
+</select>
+</section>
+
+<section>
+<h2>2. Micro-IG 資訊</h2>
+<label>訂立 Micro-IG 的 FHIR resource</label>
+<div class="radio-row">
+  <label><input type="radio" name="resource" value="Observation" checked> Observation</label>
+  <label><input type="radio" name="resource" value="Condition"> Condition</label>
+  <label><input type="radio" name="resource" value="Procedure"> Procedure</label>
+  <label><input type="radio" name="resource" value="other"> other</label>
+</div>
+
+<label for="otherResource">other 時請填入 resource 名稱</label>
+<input id="otherResource" placeholder="例如 Questionnaire">
+
+<div class="grid">
+  <div>
+    <label for="igType">a. Micro-IG 種類（identifier）</label>
+    <input id="igType" value="observation-pain">
+  </div>
+  <div>
+    <label for="version">b. 版本</label>
+    <input id="version" value="1.0.0">
+  </div>
+</div>
+
+<label for="description">文件說明</label>
+<input id="description" value="Patient problem detail specification">
+</section>
+
+<section>
+<h2>3. 規格檔內容（可直接修改）</h2>
+<p class="note">
+  新版標題：
+  problemCode,detailCode,detailName,detailNameEn,valueType,selectionType,valueCode,valueDisplay,valueDisplayEn
+</p>
+<p class="note">
+  selectionType 使用 single 或 multiple。同一 detailCode 的所有選項必須一致。
+  舊版 8 欄 CSV 仍可讀取；舊格式會補上 selectionType=single。
+</p>
+
+<label for="csvText">CSV 內容</label>
+<textarea id="csvText" spellcheck="false">problemCode,detailCode,detailName,detailNameEn,valueType,selectionType,valueCode,valueDisplay,valueDisplayEn
+pain,severity,嚴重程度,Severity,code,single,mild,輕度,Mild
+pain,severity,嚴重程度,Severity,code,single,moderate,中度,Moderate
+pain,bodySite,發生部位,Body Site,code,multiple,head,頭部,Head
+pain,quality,疼痛模式,Pain Quality,code,multiple,sharp,刺痛,Sharp pain
+pain,frequency,發生頻率,Frequency,code,single,intermittent,間歇性,Intermittent
+pain,aggravating,加重因素,Aggravating Factor,code,multiple,movement,活動,Movement</textarea>
+
+<button type="button" class="secondary" id="validate">檢查 CSV</button>
+<button type="button" id="generate">按鈕 1：產生 DocumentReference JSON</button>
+<div id="csvStatus" class="status" role="status">尚未檢查 CSV。</div>
+</section>
+
+<section>
+<h2>4. DocumentReference JSON</h2>
+<label for="jsonOutput">產生的 JSON</label>
+<textarea id="jsonOutput" spellcheck="false"></textarea>
+<button type="button" class="upload" id="upload">按鈕 2：PUT 上傳</button>
+</section>
+
+<section>
+<h2>5. 伺服器回應</h2>
+<div id="serverStatus" class="status" role="status">尚未上傳。</div>
+<label for="resourceUrl">調閱此 DocumentReference 的 URL</label>
+<input id="resourceUrl" readonly>
+<button type="button" class="secondary" id="openResource">開啟資源</button>
+</section>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+
+const NEW_HEADERS = [
+  "problemCode", "detailCode", "detailName", "detailNameEn",
+  "valueType", "selectionType", "valueCode", "valueDisplay",
+  "valueDisplayEn"
+];
+
+const OLD_HEADERS = [
+  "problemCode", "detailCode", "detailName", "detailNameEn",
+  "valueType", "valueCode", "valueDisplay", "valueDisplayEn"
+];
+
+function uuid() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === "x" ? r : (r & 3 | 8)).toString(16);
+  });
+}
+
+function newId() {
+  $("docId").value = uuid();
+  $("resourceUrl").value = "";
+}
+
+$("newId").addEventListener("click", newId);
+newId();
+
+/*
+ * CSV parser:
+ * 支援雙引號、欄位內逗號、欄位內換行及 "" 跳脫。
+ */
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let quoted = false;
+
+  text = text.replace(/^\uFEFF/, "");
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (quoted) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          quoted = false;
+        }
+      } else {
+        field += ch;
+      }
+    } else if (ch === '"' && field === "") {
+      quoted = true;
+    } else if (ch === ",") {
+      row.push(field);
+      field = "";
+    } else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(field);
+      if (row.some(v => v.trim() !== "")) rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += ch;
+    }
+  }
+
+  if (quoted) throw new Error("CSV 含有未配對的雙引號。");
+
+  row.push(field);
+  if (row.some(v => v.trim() !== "")) rows.push(row);
+
+  return rows;
+}
+
+function readCSV() {
+  const rows = parseCSV($("csvText").value);
+
+  if (rows.length < 2) {
+    throw new Error("CSV 必須包含標題列及至少一筆資料。");
+  }
+
+  const headers = rows[0].map(v => v.trim());
+
+  const isNew = NEW_HEADERS.every((h, i) => headers[i] === h)
+    && headers.length === NEW_HEADERS.length;
+
+  const isOld = OLD_HEADERS.every((h, i) => headers[i] === h)
+    && headers.length === OLD_HEADERS.length;
+
+  if (!isNew && !isOld) {
+    throw new Error(
+      "CSV 標題列不符合新版 9 欄或舊版 8 欄規格，請檢查欄位名稱及順序。"
+    );
+  }
+
+  const data = rows.slice(1).map((values, index) => {
+    if (values.length !== headers.length) {
+      throw new Error(
+        "第 " + (index + 2) + " 列有 " + values.length +
+        " 欄，預期為 " + headers.length + " 欄。"
+      );
+    }
+
+    const item = {};
+    headers.forEach((h, i) => item[h] = values[i].trim());
+
+    // 舊版格式沒有 selectionType，採用 single 作為相容預設。
+    if (isOld) item.selectionType = "single";
+
+    return item;
+  });
+
+  const required = [
+    "problemCode", "detailCode", "detailName", "detailNameEn",
+    "valueType", "selectionType", "valueCode",
+    "valueDisplay", "valueDisplayEn"
+  ];
+
+  data.forEach((item, i) => {
+    required.forEach(key => {
+      if (!item[key]) {
+        throw new Error("第 " + (i + 2) + " 列的 " + key + " 不可空白。");
+      }
+    });
+
+    if (!["single", "multiple"].includes(item.selectionType)) {
+      throw new Error(
+        "第 " + (i + 2) + " 列 selectionType 必須是 single 或 multiple。"
+      );
+    }
+
+    if (item.problemCode.includes(" ") || item.detailCode.includes(" ")) {
+      throw new Error(
+        "第 " + (i + 2) + " 列的 problemCode/detailCode 不應包含空白。"
+      );
+    }
+  });
+
+  // 同一 problemCode + detailCode 必須有相同的 selectionType。
+  const modes = new Map();
+
+  data.forEach((item, i) => {
+    const key = item.problemCode + "|" + item.detailCode;
+
+    if (modes.has(key) && modes.get(key) !== item.selectionType) {
+      throw new Error(
+        "第 " + (i + 2) + " 列的 selectionType 與同組 detailCode 不一致：" +
+        item.detailCode
+      );
+    }
+
+    modes.set(key, item.selectionType);
+  });
+
+  // valueCode 在同一 detailCode 下不應重複。
+  const valuesSeen = new Set();
+
+  data.forEach((item, i) => {
+    const key = [
+      item.problemCode, item.detailCode, item.valueCode
+    ].join("|");
+
+    if (valuesSeen.has(key)) {
+      throw new Error(
+        "第 " + (i + 2) + " 列的 valueCode 重複：" + item.valueCode
+      );
+    }
+
+    valuesSeen.add(key);
+  });
+
+  return {
+    data,
+    headers: isNew ? NEW_HEADERS : OLD_HEADERS,
+    isNew
+  };
+}
+
+function showCSVStatus(message, isError) {
+  $("csvStatus").textContent = message;
+  $("csvStatus").style.background = isError ? "#fff0ed" : "#eef7f0";
+}
+
+function validateCSV() {
+  try {
+    const result = readCSV();
+    const details = new Map();
+
+    result.data.forEach(row => {
+      const key = row.problemCode + "|" + row.detailCode;
+      if (!details.has(key)) {
+        details.set(key, {
+          name: row.detailName,
+          mode: row.selectionType
+        });
+      }
+    });
+
+    let message =
+      "CSV 檢查通過。\n" +
+      "格式：" + (result.isNew ? "新版 9 欄" : "舊版 8 欄，相容模式") +
+      "\n選項資料：" + result.data.length + " 列\n\n";
+
+    details.forEach((detail, key) => {
+      message += key.replace("|", " / ") + "："
+        + detail.name + "（" + detail.mode + "）\n";
+    });
+
+    showCSVStatus(message, false);
+    return result;
+  } catch (error) {
+    showCSVStatus("CSV 檢查失敗：\n" + error.message, true);
+    throw error;
+  }
+}
+
+$("validate").addEventListener("click", () => {
+  try {
+    validateCSV();
+  } catch (_) {}
+});
+
+$("csvFile").addEventListener("change", async event => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    $("csvText").value = await file.text();
+    validateCSV();
+  } catch (error) {
+    showCSVStatus("讀取失敗：" + error.message, true);
+  }
+});
+
+function selectedResource() {
+  const selected = document.querySelector(
+    'input[name="resource"]:checked'
+  ).value;
+
+  if (selected !== "other") return selected;
+
+  const other = $("otherResource").value.trim();
+
+  if (!/^[A-Za-z][A-Za-z0-9]*$/.test(other)) {
+    throw new Error("請輸入有效的 FHIR resource 名稱，例如 Questionnaire。");
+  }
+
+  return other;
+}
+
+function buildDocumentReference() {
+  const parsed = readCSV();
+  const id = $("docId").value.trim();
+  const server = $("server").value.trim().replace(/\/+$/, "");
+  const igType = $("igType").value.trim();
+  const version = $("version").value.trim();
+  const description = $("description").value.trim();
+  const format = $("format").value;
+  const resource = selectedResource();
+
+  if (!id) throw new Error("請輸入 DocumentReference ID。");
+  if (!server) throw new Error("請輸入 FHIR Server URL。");
+  if (!igType) throw new Error("請輸入 Micro-IG 種類。");
+  if (!version) throw new Error("請輸入版本。");
+
+  const csv = $("csvText").value.replace(/^\uFEFF/, "").trim();
+
+  // 以 UTF-8 編碼，確保中文 CSV 可正確保存。
+  const bytes = new TextEncoder().encode(csv);
+  let binary = "";
+  const chunkSize = 0x8000;
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(
+      ...bytes.subarray(i, i + chunkSize)
+    );
+  }
+
+  const encoded = btoa(binary);
+
+  /*
+   * 保留 DocumentReference 的基本 R4 結構。
+   * attachment.data 儲存原始 CSV 的 Base64。
+   * masterIdentifier 同時包含種類及版本。
+   */
+  const doc = {
+    resourceType: "DocumentReference",
+    id: id,
+    masterIdentifier: {
+      system: "urn:ietf:rfc:3986",
+      value: "urn:uuid:" + id
+    },
+    identifier: [{
+      system: "https://example.org/fhir/micro-ig",
+      value: igType
+    }],
+    status: "current",
+    type: {
+      text: igType + " v" + version
+    },
+    category: [{
+      coding: [{
+        system: "https://example.org/fhir/micro-ig-resource",
+        code: resource.toLowerCase(),
+        display: resource
+      }]
+    }],
+    description: description,
+    content: [{
+      attachment: {
+        contentType: format,
+        title: id,
+        data: encoded
+      }
+    }]
+  };
+
+  // 將版本資訊保存在 masterIdentifier.value。
+  doc.masterIdentifier.value = "urn:uuid:" + id + "|"
+    + igType + "|" + version;
+
+  return { doc, server };
+}
+
+$("generate").addEventListener("click", () => {
+  try {
+    const result = buildDocumentReference();
+    $("jsonOutput").value = JSON.stringify(result.doc, null, 2);
+    $("resourceUrl").value =
+      result.server + "/DocumentReference/" + result.doc.id;
+
+    showCSVStatus(
+      "已成功產生 DocumentReference JSON。\n" +
+      "CSV 選項資料及 selectionType 均已保留。",
+      false
+    );
+  } catch (error) {
+    $("serverStatus").textContent = "產生失敗：" + error.message;
+  }
+});
+
+$("upload").addEventListener("click", async () => {
+  try {
+    let doc;
+
+    if (!$("jsonOutput").value.trim()) {
+      const result = buildDocumentReference();
+      doc = result.doc;
+      $("jsonOutput").value = JSON.stringify(doc, null, 2);
+    } else {
+      doc = JSON.parse($("jsonOutput").value);
+    }
+
+    const server = $("server").value.trim().replace(/\/+$/, "");
+
+    if (!server) throw new Error("請輸入 FHIR Server URL。");
+    if (doc.resourceType !== "DocumentReference" || !doc.id) {
+      throw new Error("JSON 必須是包含 id 的 DocumentReference。");
+    }
+
+    const url = server + "/DocumentReference/" +
+      encodeURIComponent(doc.id);
+
+    $("serverStatus").textContent = "正在 PUT 上傳……";
+
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/fhir+json;charset=UTF-8",
+        "Accept": "application/fhir+json"
+      },
+      body: JSON.stringify(doc)
+    });
+
+    const responseText = await response.text();
+
+    let display = "HTTP " + response.status + " " +
+      response.statusText + "\n";
+
+    try {
+      display += JSON.stringify(JSON.parse(responseText), null, 2);
+    } catch (_) {
+      display += responseText;
+    }
+
+    $("serverStatus").textContent = display;
+
+    if (response.ok) {
+      $("resourceUrl").value = url;
+    }
+  } catch (error) {
+    $("serverStatus").textContent =
+      "上傳失敗：" + error.message +
+      "\n請確認伺服器網址、網路連線及 CORS 設定。";
+  }
+});
+
+$("openResource").addEventListener("click", () => {
+  const url = $("resourceUrl").value.trim();
+
+  if (url) window.open(url, "_blank", "noopener,noreferrer");
+  else $("serverStatus").textContent = "請先產生或上傳 DocumentReference。";
+});
+</script>
+</body>
+</html>

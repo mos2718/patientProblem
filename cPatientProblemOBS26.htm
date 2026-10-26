@@ -1,0 +1,713 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FHIR Patient Problem Observation</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  font-family: Arial, "Microsoft JhengHei", sans-serif;
+  max-width: 1050px; margin: 24px auto; padding: 0 16px;
+  background: #f4f7fb; color: #243247; line-height: 1.55;
+}
+h1 { font-size: 24px; }
+h2 { font-size: 18px; margin-top: 0; }
+.panel {
+  background: white; padding: 20px; margin: 16px 0;
+  border: 1px solid #dce4ef; border-radius: 12px;
+}
+label { display: block; font-weight: 600; margin: 10px 0 5px; }
+input[type="text"], input[type="url"], input[type="datetime-local"],
+input[type="number"], textarea, select {
+  width: 100%; padding: 10px; border: 1px solid #cbd5e1;
+  border-radius: 7px; font: inherit; background: white;
+}
+button {
+  border: 0; border-radius: 7px; padding: 10px 16px;
+  margin: 8px 5px 0 0; cursor: pointer; font-size: 14px;
+  background: #1769aa; color: white;
+}
+button.secondary { background: #53657c; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.small { color: #64748b; font-size: 13px; }
+.status { margin-top: 10px; white-space: pre-wrap; }
+.detail-group {
+  border: 1px solid #dce4ef; border-radius: 9px;
+  padding: 14px; margin: 12px 0;
+}
+.detail-title {
+  font-weight: 700; font-size: 16px; margin-bottom: 8px;
+}
+.detail-row {
+  padding: 7px 10px; border-radius: 6px;
+}
+.detail-row:nth-child(even) { background: #f7f9fc; }
+.detail-row label {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 400; margin: 3px 0; cursor: pointer;
+}
+.detail-row input { flex-shrink: 0; }
+.badge {
+  display: inline-block; padding: 2px 7px; border-radius: 5px;
+  background: #e8f2ff; color: #17548a; font-size: 12px;
+}
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+#csvPreview { max-height: 220px; overflow: auto; }
+</style>
+</head>
+<body>
+
+<h1>病人問題狀況 Observation 輸入</h1>
+<p class="small">
+  從 FHIR DocumentReference 讀取 detail.csv，
+  依 selectionType 產生單選或多選介面，並寫入 Observation.component。
+</p>
+
+<section class="panel">
+  <h2>1. 伺服器、病人與規格</h2>
+
+  <label for="serverUrl">FHIR Server URL</label>
+  <input id="serverUrl" type="url"
+    value="https://hapi.fhir.org/baseR4">
+
+  <label for="patientId">Patient ID</label>
+  <input id="patientId" type="text"
+    value="7158c01b-32ba-4fbd-a038-201a0a2a4e2a">
+
+  <label for="docUrl">detail 規格的 DocumentReference URL</label>
+  <input id="docUrl" type="url"
+    value="https://hapi.fhir.org/baseR4/DocumentReference/680834c1-3ca8-40de-abb7-cd8cbbf35459">
+
+  <label for="recordTime">紀錄時間</label>
+  <input id="recordTime" type="datetime-local">
+
+  <button id="loadBtn" onclick="loadSpecification()">讀取規格</button>
+  <div id="loadStatus" class="status"></div>
+
+  <details style="margin-top:12px">
+    <summary>查看解碼後的 detail.csv</summary>
+    <pre id="csvPreview" class="small"></pre>
+  </details>
+</section>
+
+<section class="panel">
+  <h2>2. 選擇問題描述</h2>
+  <p class="small">
+    每個 detailCode 是一個描述項目。
+    single 使用 radio；multiple 使用 checkbox。
+    不同 detailCode 可分別選擇。
+  </p>
+  <div id="detailArea">請先讀取規格。</div>
+</section>
+
+<section class="panel">
+  <h2>3. 產生及上傳 Observation</h2>
+
+  <button onclick="generateObservation()">產生 Observation JSON</button>
+  <button id="uploadBtn" onclick="uploadObservation()">POST 上傳</button>
+
+  <label for="observationJson">Observation JSON</label>
+  <textarea id="observationJson" rows="16"
+    placeholder="產生的 Observation JSON 將顯示於此"></textarea>
+
+  <label for="responseText">FHIR Server 回應</label>
+  <textarea id="responseText" rows="6" readonly></textarea>
+
+  <label for="resultUrl">Observation URL</label>
+  <input id="resultUrl" type="url" readonly>
+
+  <button class="secondary" onclick="openResult()">開啟 Observation URL</button>
+</section>
+
+<script>
+"use strict";
+
+const DETAIL_CODE_SYSTEM =
+  "https://example.org/fhir/CodeSystem/problem-detail";
+
+const VALUE_CODE_SYSTEM =
+  "https://example.org/fhir/CodeSystem/problem-detail-value";
+
+const PROBLEM_CODE_SYSTEM =
+  "https://example.org/fhir/CodeSystem/problem-code";
+
+let csvRows = [];
+let specification = null;
+let currentObservation = null;
+
+// 預設紀錄時間為目前本地時間
+function setDefaultTime() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  document.getElementById("recordTime").value =
+    d.toISOString().slice(0, 16);
+}
+setDefaultTime();
+
+function getServerUrl() {
+  return document.getElementById("serverUrl").value.trim()
+    .replace(/\/+$/, "");
+}
+
+// 支援 CSV 雙引號、逗號及欄位內換行
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let quoted = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (quoted) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          quoted = false;
+        }
+      } else {
+        field += ch;
+      }
+    } else if (ch === '"' && field.length === 0) {
+      quoted = true;
+    } else if (ch === ",") {
+      row.push(field);
+      field = "";
+    } else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(field);
+      if (row.some(v => v.trim() !== "")) rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += ch;
+    }
+  }
+
+  if (field !== "" || row.length > 0) {
+    row.push(field);
+    if (row.some(v => v.trim() !== "")) rows.push(row);
+  }
+
+  if (rows.length < 2) {
+    throw new Error("CSV 沒有資料列。");
+  }
+
+  const headers = rows[0].map(h =>
+    h.replace(/^\uFEFF/, "").trim()
+  );
+
+  return rows.slice(1).map(cols => {
+    const obj = {};
+    headers.forEach((h, i) => {
+      obj[h] = (cols[i] || "").trim();
+    });
+    return obj;
+  });
+}
+
+// 解碼 DocumentReference attachment.data
+function decodeBase64Utf8(data) {
+  const cleaned = data.replace(/\s/g, "");
+  const binary = atob(cleaned);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
+async function loadSpecification() {
+  const status = document.getElementById("loadStatus");
+  const area = document.getElementById("detailArea");
+  const preview = document.getElementById("csvPreview");
+  const url = document.getElementById("docUrl").value.trim();
+
+  status.textContent = "正在讀取 DocumentReference…";
+  area.innerHTML = "";
+  preview.textContent = "";
+  csvRows = [];
+  specification = null;
+
+  try {
+    if (!url) throw new Error("請輸入 DocumentReference URL。");
+
+    const response = await fetch(url, {
+      headers: { "Accept": "application/fhir+json, application/json" }
+    });
+
+    if (!response.ok) {
+      throw new Error("讀取失敗 HTTP " + response.status);
+    }
+
+    const doc = await response.json();
+
+    if (doc.resourceType !== "DocumentReference") {
+      throw new Error("指定 URL 回傳的不是 DocumentReference。");
+    }
+
+    const attachments = (doc.content || [])
+      .map(c => c.attachment)
+      .filter(a => a && a.data);
+
+    if (!attachments.length) {
+      throw new Error(
+        "DocumentReference.content.attachment.data 不存在。"
+      );
+    }
+
+    // 依序尋找可成功解析的 CSV attachment
+    let csvText = "";
+    let parsed = null;
+    let lastError = null;
+
+    for (const attachment of attachments) {
+      try {
+        const candidate = decodeBase64Utf8(attachment.data);
+        const rows = parseCSV(candidate);
+
+        if (!rows.length || !("problemCode" in rows[0]) ||
+            !("detailCode" in rows[0])) {
+          throw new Error("CSV 缺少 problemCode 或 detailCode 欄位。");
+        }
+
+        csvText = candidate;
+        parsed = rows;
+        break;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    if (!parsed) {
+      throw lastError || new Error("無法解析 CSV。");
+    }
+
+    csvRows = parsed;
+    specification = doc;
+
+    preview.textContent = csvText;
+    renderDetails();
+
+    status.textContent =
+      "讀取成功！\nDocumentReference ID：" + doc.id +
+      "\nCSV 資料筆數：" + csvRows.length +
+      "\n不同 detailCode 數：" +
+      new Set(csvRows.map(r => r.detailCode)).size;
+
+  } catch (e) {
+    status.textContent = "讀取錯誤：" + e.message;
+    area.textContent = "無法載入規格，請檢查 URL、CSV 格式或伺服器 CORS 設定。";
+  }
+}
+
+// 將 CSV 依 problemCode、detailCode 分組
+function groupDetails() {
+  const groups = new Map();
+
+  csvRows.forEach((r, index) => {
+    const key = r.problemCode + "::" + r.detailCode;
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        problemCode: r.problemCode,
+        detailCode: r.detailCode,
+        detailName: r.detailName || r.detailCode,
+        detailNameEn: r.detailNameEn || "",
+        valueType: (r.valueType || "code").toLowerCase(),
+        selectionType: (r.selectionType || "single").toLowerCase(),
+        rows: []
+      });
+    }
+
+    const g = groups.get(key);
+
+    // 同一個 detailCode 應使用一致的型別與選擇模式
+    if (g.valueType !== (r.valueType || "code").toLowerCase()) {
+      console.warn("同一 detailCode 出現不同 valueType：", key);
+    }
+
+    if (g.selectionType !==
+        (r.selectionType || "single").toLowerCase()) {
+      console.warn("同一 detailCode 出現不同 selectionType：", key);
+    }
+
+    g.rows.push({ ...r, _rowIndex: index });
+  });
+
+  return [...groups.values()];
+}
+
+function renderDetails() {
+  const area = document.getElementById("detailArea");
+  area.innerHTML = "";
+
+  const groups = groupDetails();
+
+  if (!groups.length) {
+    area.textContent = "CSV 沒有可顯示的 detailCode。";
+    return;
+  }
+
+  groups.forEach((g, groupIndex) => {
+    const section = document.createElement("div");
+    section.className = "detail-group";
+
+    const title = document.createElement("div");
+    title.className = "detail-title";
+    title.textContent = g.detailName +
+      (g.detailNameEn ? " / " + g.detailNameEn : "");
+
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent =
+      g.selectionType === "multiple" ? "多選" :
+      g.selectionType === "single" ? "單選" : g.valueType;
+    title.appendChild(document.createTextNode(" "));
+    title.appendChild(badge);
+    section.appendChild(title);
+
+    const validSelection =
+      g.selectionType === "single" ||
+      g.selectionType === "multiple";
+
+    if (g.valueType === "code" && !validSelection) {
+      const warn = document.createElement("p");
+      warn.className = "small";
+      warn.textContent =
+        "未知 selectionType：" + g.selectionType +
+        "，請修正 CSV。";
+      section.appendChild(warn);
+      area.appendChild(section);
+      return;
+    }
+
+    // 非 code 欄位採用文字或數值輸入
+    if (g.valueType !== "code") {
+      const input = document.createElement("input");
+      input.id = "input_" + groupIndex;
+      input.dataset.groupIndex = groupIndex;
+
+      if (g.valueType === "quantity" ||
+          g.valueType === "decimal" ||
+          g.valueType === "integer") {
+        input.type = "number";
+        if (g.valueType !== "quantity") input.step = "any";
+      } else if (g.valueType === "date") {
+        input.type = "date";
+      } else if (g.valueType === "datetime") {
+        input.type = "datetime-local";
+      } else if (g.valueType === "boolean") {
+        input.type = "checkbox";
+      } else {
+        input.type = "text";
+      }
+
+      input.dataset.valueType = g.valueType;
+
+      if (g.valueType === "quantity") {
+        const unitLabel = document.createElement("label");
+        unitLabel.textContent = "單位（UCUM，可選）";
+        const unit = document.createElement("input");
+        unit.type = "text";
+        unit.id = "unit_" + groupIndex;
+        unit.placeholder = "例如：kg、cm、Cel";
+        section.appendChild(unitLabel);
+        section.appendChild(unit);
+      }
+
+      const inputLabel = document.createElement("label");
+      inputLabel.textContent = g.detailName + " 輸入值";
+      section.appendChild(inputLabel);
+      section.appendChild(input);
+      area.appendChild(section);
+      return;
+    }
+
+    g.rows.forEach((r, rowIndex) => {
+      const line = document.createElement("div");
+      line.className = "detail-row";
+
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+
+      input.type =
+        g.selectionType === "multiple" ? "checkbox" : "radio";
+
+      input.name = "detail_" + groupIndex;
+      input.dataset.groupIndex = groupIndex;
+      input.dataset.rowIndex = rowIndex;
+
+      const display = r.valueDisplay || r.valueCode || "";
+      const displayEn = r.valueDisplayEn || "";
+      const text = display +
+        (displayEn ? " / " + displayEn : "");
+
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(text));
+      line.appendChild(label);
+      section.appendChild(line);
+    });
+
+    area.appendChild(section);
+  });
+}
+
+// 產生 FHIR component value[x]
+function buildComponentValue(g, selectedRows, groupIndex) {
+  if (g.valueType === "code") {
+    return selectedRows.map(r => ({
+      code: {
+        coding: [{
+          system: DETAIL_CODE_SYSTEM,
+          code: g.detailCode,
+          display: g.detailName
+        }],
+        text: g.detailName
+      },
+      valueCodeableConcept: {
+        coding: [{
+          system: VALUE_CODE_SYSTEM,
+          code: r.valueCode,
+          display: r.valueDisplay || r.valueCode
+        }],
+        text: r.valueDisplay || r.valueCode
+      }
+    }));
+  }
+
+  const input = document.getElementById("input_" + groupIndex);
+  if (!input) return [];
+
+  let value;
+  const type = g.valueType;
+
+  if (type === "boolean") {
+    // 未勾選視為未輸入，不自動記錄 false
+    if (!input.checked) return [];
+    value = { valueBoolean: true };
+  } else {
+    const raw = input.value.trim();
+    if (raw === "") return [];
+
+    if (type === "quantity") {
+      const number = Number(raw);
+      if (!Number.isFinite(number)) {
+        throw new Error(g.detailName + " 必須輸入有效數值。");
+      }
+
+      const unitInput = document.getElementById("unit_" + groupIndex);
+      const unit = unitInput ? unitInput.value.trim() : "";
+
+      value = {
+        valueQuantity: {
+          value: number,
+          ...(unit ? { unit: unit, code: unit,
+            system: "http://unitsofmeasure.org" } : {})
+        }
+      };
+    } else if (type === "decimal" || type === "integer") {
+      const number = Number(raw);
+      if (!Number.isFinite(number)) {
+        throw new Error(g.detailName + " 必須輸入有效數值。");
+      }
+      if (type === "integer" && !Number.isInteger(number)) {
+        throw new Error(g.detailName + " 必須輸入整數。");
+      }
+      value = { valueQuantity: { value: number } };
+    } else if (type === "date") {
+      value = { valueDate: raw };
+    } else if (type === "datetime") {
+      value = { valueDateTime: new Date(raw).toISOString() };
+    } else {
+      value = { valueString: raw };
+    }
+  }
+
+  return [{
+    code: {
+      coding: [{
+        system: DETAIL_CODE_SYSTEM,
+        code: g.detailCode,
+        display: g.detailName
+      }],
+      text: g.detailName
+    },
+    ...value
+  }];
+}
+
+function generateObservation() {
+  const patientId = document.getElementById("patientId").value.trim();
+  const time = document.getElementById("recordTime").value;
+  const output = document.getElementById("observationJson");
+
+  try {
+    if (!specification || !csvRows.length) {
+      throw new Error("請先讀取 DocumentReference 規格。");
+    }
+    if (!patientId) throw new Error("請輸入 Patient ID。");
+    if (!time) throw new Error("請輸入紀錄時間。");
+
+    const groups = groupDetails();
+    const components = [];
+
+    groups.forEach((g, groupIndex) => {
+      if (g.valueType !== "code") {
+        components.push(
+          ...buildComponentValue(g, [], groupIndex)
+        );
+        return;
+      }
+
+      const selected = [
+        ...document.querySelectorAll(
+          'input[data-group-index="' + groupIndex + '"]:checked'
+        )
+      ];
+
+      const selectedRows = selected.map(input => {
+        return g.rows[Number(input.dataset.rowIndex)];
+      }).filter(Boolean);
+
+      if (g.selectionType === "single" &&
+          selectedRows.length > 1) {
+        throw new Error(g.detailName + " 只能選一個值。");
+      }
+
+      // 多選的每個勾選值各建立一筆 component
+      components.push(
+        ...buildComponentValue(g, selectedRows, groupIndex)
+      );
+    });
+
+    if (!components.length) {
+      throw new Error("請至少選擇或輸入一個問題描述項目。");
+    }
+
+    const problemCodes = [
+      ...new Set(csvRows.map(r => r.problemCode).filter(Boolean))
+    ];
+
+    const observation = {
+      resourceType: "Observation",
+      id: crypto.randomUUID(),
+      status: "final",
+      category: [{
+        coding: [{
+          system: "http://terminology.hl7.org/CodeSystem/observation-category",
+          code: "survey",
+          display: "Survey"
+        }]
+      }],
+      code: {
+        coding: problemCodes.map(code => ({
+          system: PROBLEM_CODE_SYSTEM,
+          code: code,
+          display: code
+        })),
+        text: "Patient problem details"
+      },
+      subject: {
+        reference: "Patient/" + patientId
+      },
+      effectiveDateTime: new Date(time).toISOString(),
+      issued: new Date().toISOString(),
+      derivedFrom: [{
+        reference: "DocumentReference/" + specification.id
+      }],
+      component: components
+    };
+
+    currentObservation = observation;
+    output.value = JSON.stringify(observation, null, 2);
+    document.getElementById("responseText").value = "";
+    document.getElementById("resultUrl").value = "";
+
+  } catch (e) {
+    alert("產生 Observation 失敗：\n" + e.message);
+  }
+}
+
+async function uploadObservation() {
+  const server = getServerUrl();
+  const patientId = document.getElementById("patientId").value.trim();
+  const responseBox = document.getElementById("responseText");
+
+  try {
+    if (!server) throw new Error("請輸入 FHIR Server URL。");
+    if (!patientId) throw new Error("請輸入 Patient ID。");
+
+    const raw = document.getElementById("observationJson").value.trim();
+    if (!raw) throw new Error("請先產生 Observation JSON。");
+
+    // 以 textarea 內容為準，方便使用者修改後再上傳
+    const observation = JSON.parse(raw);
+
+    if (observation.resourceType !== "Observation") {
+      throw new Error("JSON 的 resourceType 必須是 Observation。");
+    }
+
+    const button = document.getElementById("uploadBtn");
+    button.disabled = true;
+    responseBox.value = "正在上傳…";
+
+    const response = await fetch(server + "/Observation", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/fhir+json",
+        "Accept": "application/fhir+json"
+      },
+      body: JSON.stringify(observation)
+    });
+
+    const body = await response.text();
+    responseBox.value =
+      "HTTP " + response.status + "\n\n" + body;
+
+    if (!response.ok) {
+      throw new Error("FHIR Server 回傳 HTTP " + response.status);
+    }
+
+    let result;
+    try {
+      result = JSON.parse(body);
+    } catch (_) {
+      result = null;
+    }
+
+    const location = response.headers.get("Location");
+    const resultUrl = result && result.id
+      ? server + "/Observation/" + result.id
+      : location ? new URL(location, server).href : "";
+
+    document.getElementById("resultUrl").value = resultUrl;
+
+    if (result && result.id) {
+      document.getElementById("observationJson").value =
+        JSON.stringify(result, null, 2);
+    }
+
+  } catch (e) {
+    responseBox.value = "上傳錯誤：" + e.message;
+  } finally {
+    document.getElementById("uploadBtn").disabled = false;
+  }
+}
+
+function openResult() {
+  const url = document.getElementById("resultUrl").value.trim();
+  if (url) window.open(url, "_blank", "noopener");
+  else alert("尚無 Observation URL，請先成功上傳。");
+}
+</script>
+</body>
+</html>
+
